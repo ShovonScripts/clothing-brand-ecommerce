@@ -55,6 +55,14 @@ class HomeController extends Controller
         return view('frontend.contact_us');
 
     }
+
+    public function career(){
+
+        $items = \App\Models\Career::latest()->get();
+
+        return view('frontend.career', compact('items'));
+
+    }
     
     public function privacyPolicy(){
 

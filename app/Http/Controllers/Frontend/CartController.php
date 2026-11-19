@@ -152,7 +152,7 @@ class CartController extends Controller
                 "size" => $variation->size?$variation->size->title:'',
                 "color" => $variation->color?$variation->color->name:'',
                 "quantity" => $quantity,
-                "price" => $request->price,
+                "price" => $data['price'],
                 "discount" => $data['discount_amount'],
                 "variation_id" => $variation_id,
                 "product_id" => $product_id,
@@ -176,16 +176,16 @@ class CartController extends Controller
             $qty=$request->quantity;
           	
           	$cart = session()->get('cart');
-          	$segm='home';
-          	if($request->segment){
-            	$segm=$request->segment;
-          	}
+          	$segm = request()->segment(1) ?: 'home';
           
           	if($qty==0){
             	if(isset($cart[$id])) {
                     unset($cart[$id]);
                 }
           	}else{
+                if(!isset($cart[$id])){
+                    return response()->json(['success'=>false,'msg'=>' Cart item not found !']);
+                }
                	$product_id=$cart[$id]["product_id"];
                	$is_stock=$cart[$id]["is_stock"];
               	$stock=$this->util->checkProductStock($product_id, $id);

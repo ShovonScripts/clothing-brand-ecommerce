@@ -86,23 +86,52 @@ function getOrderMethod()
     return ['cash' => 'Cash', 'Card' => 'Card'];
 }
 
+/**
+ * Send a transactional SMS through the configured gateway.
+ *
+ * Credentials come from config/services.php ('sms' block), which reads the
+ * SMS_* keys in .env. If the gateway is not configured, nothing is sent and
+ * the call returns false instead of leaking customer numbers to a third party.
+ *
+ * NOTE: the query parameter names below are gateway specific. Adjust them to
+ * match whichever provider you sign up with.
+ */
 function SendSms($number = null, $message = null)
 {
-    $data = [
-        'apikey' => 'fa1417caaf958cbc',
-        'secretkey' => '71fe721b',
-        'callerID' => '1234',
-        'toUser' => $number,
-        'messageContent' => $message,
-    ];
-    $query = http_build_query($data);
-    $url = "http://217.172.190.215/sendtext?$query";
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_URL, $url);
-    $done = curl_exec($ch);
-    curl_close($ch);
-    return $done;
+    $config = config('services.sms');
+
+    if (empty($config['url']) || empty($config['apikey'])) {
+        \Illuminate\Support\Facades\Log::warning('SendSms skipped: SMS gateway is not configured.');
+
+        return false;
+    }
+
+    if (empty($number) || empty($message)) {
+        return false;
+    }
+
+    try {
+        $response = \Illuminate\Support\Facades\Http::timeout(10)->get($config['url'], [
+            'apikey' => $config['apikey'],
+            'secretkey' => $config['secretkey'],
+            'callerID' => $config['sender_id'],
+            'toUser' => $number,
+            'messageContent' => $message,
+        ]);
+
+        if ($response->failed()) {
+            // Never log the recipient number or the message body.
+            \Illuminate\Support\Facades\Log::error('SendSms failed with HTTP status '.$response->status());
+
+            return false;
+        }
+
+        return $response->body();
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('SendSms error: '.$e->getMessage());
+
+        return false;
+    }
 }
 
 function getPageName()

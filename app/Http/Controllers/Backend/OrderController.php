@@ -897,7 +897,7 @@ class OrderController extends Controller
             'Authorization' => $this->pathao_api_access_token,
        ])->get($this->pathao_api_base_url.'stores'); 
     
-       $stores = $response->json()['data']['data'];
+       $stores = $response->json()['data']['data'] ?? [];
        return $stores;
   }  
   
@@ -907,7 +907,7 @@ class OrderController extends Controller
             'Authorization' => $this->pathao_api_access_token,
        ])->get($this->pathao_api_base_url.'countries/1/city-list'); 
     
-       $cities = $response->json()['data']['data'];
+       $cities = $response->json()['data']['data'] ?? [];
        return $cities;
   }  
   
@@ -917,7 +917,7 @@ class OrderController extends Controller
             'Authorization' => $this->pathao_api_access_token,
        ])->get($this->pathao_api_base_url.'cities/'.$city.'/zone-list'); 
     
-       $zones = $response->json()['data']['data'];
+       $zones = $response->json()['data']['data'] ?? [];
     	
        return response()->json(['success'=>true, 'zones'=> $zones]);
   }  
@@ -928,7 +928,7 @@ class OrderController extends Controller
             'Authorization' => $this->pathao_api_access_token,
        ])->get($this->pathao_api_base_url.'zones/'.$zone.'/area-list'); 
     
-       $areas = $response->json()['data']['data'];
+       $areas = $response->json()['data']['data'] ?? [];
     
        return response()->json(['success'=>true, 'areas'=> $areas]);
   }
@@ -1069,3 +1069,4 @@ class OrderController extends Controller
     dd($response->json());
   }
 }
+

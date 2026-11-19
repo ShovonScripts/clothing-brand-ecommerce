@@ -99,6 +99,11 @@ class ProductController extends Controller
         } 
 
         $product=Product::with('sizes')->find($id);
+
+        if (!$product) {
+            abort(404);
+        }
+
         $products=Product::where('id','!=',$id)->where('category_id', $product->category_id)->take(4)->get();
 
         return view('frontend.products.show', compact('product','products'));
@@ -107,6 +112,10 @@ class ProductController extends Controller
   	public function relativeProduct($id){
 
         $product = Product::with('sizes','sizes.stocks')->find($id);
+
+        if (!$product) {
+            return response()->json([]);
+        }
 
         $baseQuery = Product::with('variation')
                 ->select('products.id','products.name','products.is_free_shipping','products.type','products.purchase_price','products.regular_price','products.sell_price','products.image','is_stock','products.category_id','products.discount_type','products.discount','products.after_discount','products.dicount_amount')

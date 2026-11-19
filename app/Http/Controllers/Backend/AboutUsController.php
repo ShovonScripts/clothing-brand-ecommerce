@@ -10,14 +10,14 @@ class AboutUsController extends Controller
 {
     public function index()
     {
-        $item = AboutUs::first();
+        $item = AboutUs::first() ?? new AboutUs();
         return view('backend.about_us.about_us', compact('item'));
     }
     
     
     public function store(Request $request)
     {
-        $item=AboutUs::first();
+        $item=AboutUs::first() ?? new AboutUs();
         
         $data=$request->validate([
              'site_name'=> 'required',
@@ -63,7 +63,7 @@ class AboutUsController extends Controller
     
         
         
-        if($item){
+        if($item->exists){
             $item->update($data);
         }else{
             AboutUs::create($data);

@@ -36,4 +36,16 @@ return [
         'secret' => env('STRIPE_SECRET'),
     ],
 
+    /*
+     * SMS gateway used by the SendSms() helper in app/helpers.php.
+     * Leave SMS_URL / SMS_API_KEY empty to disable SMS sending entirely.
+     * Query parameter names in the helper may need adjusting for your provider.
+     */
+    'sms' => [
+        'url' => env('SMS_URL'),
+        'apikey' => env('SMS_API_KEY'),
+        'secretkey' => env('SMS_SECRET_KEY'),
+        'sender_id' => env('SMS_SENDER_ID'),
+    ],
+
 ];

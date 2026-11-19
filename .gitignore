@@ -14,3 +14,13 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# local debug/seed artifacts
+/updated-database.sql
+/error_log
+/check_*.php
+/debug_*.php
+/fix_*.php
+/render_*.php
+/test_*.php
+/bootstrap/cache/*.php

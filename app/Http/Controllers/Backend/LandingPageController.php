@@ -276,11 +276,12 @@ class LandingPageController extends Controller
                  }  else if($request->payment_method == 'stripe')
 
                      {
-                             \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                             if (empty(config('services.stripe.secret'))) { DB::rollback(); return response()->json(['success'=>false,'msg'=>'Stripe is not configured.']); }
+                              \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                               $charge = \Stripe\Charge::create([
-                                  'source' => $_POST['stripeToken'],
-                                  'description' => "10 cucumbers from Roger's Farm",
-                                  'amount' => $request->input('amount'),
+                                  'source' => $request->stripeToken,
+                                  'description' => 'Order #'.$order->invoice_no,
+                                  'amount' => (int) round($order->final_amount * 100),
                                   'currency' => 'usd'
                               ]);
 
@@ -355,3 +356,4 @@ class LandingPageController extends Controller
     }
 
 }
+

@@ -199,11 +199,9 @@ class AuthController extends Controller
             $url= route('front.home');
         }
 
-        $credentials = $request->only('email', 'password');
-        if (Auth::attempt($credentials)) {
-            return response()->json(['success'=>true,'msg'=>'Successfully Register !', 'url'=>route('front.home')]);
-        }
-        return response()->json(['success'=>false,'msg'=>'Oppes! You have entered invalid credentials !']);
+        Auth::login($user);
+
+        return response()->json(['success'=>true,'msg'=>'Successfully Register !', 'url'=>route('front.home')]);
         
     }
 
@@ -215,8 +213,11 @@ class AuthController extends Controller
       return User::create([
         'first_name' => $data['first_name'],
         'last_name' => $data['last_name'],
-        'email' => $data['email'],
-        'password' => Hash::make($data['password'])
+        'username' => $data['username'] ?? null,
+        'business_name' => $data['business_name'] ?? null,
+        'email' => $data['email'] ?? null,
+        'password' => Hash::make($data['password']),
+        'status' => 1,
       ]);
     }
 

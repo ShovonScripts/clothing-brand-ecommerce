@@ -1,0 +1,234 @@
+
+<?php $__env->startPush('css'); ?>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" />
+<?php $__env->stopPush(); ?>
+<?php $__env->startSection('content'); ?>
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box">
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">SIS</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">CRM</a></li>
+                    <li class="breadcrumb-item active">Purchase Edit</li>
+                </ol>
+            </div>
+            <h4 class="page-title">Purchase Edit</h4>
+        </div>
+    </div>
+</div>   
+<!-- end page title --> 
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="<?php echo e(route('admin.purchase.update', $item->id)); ?>" id="ajax_form">
+                    <?php echo csrf_field(); ?>
+                    <?php echo method_field('PUT'); ?>
+                    <div class="row">
+                        <div class="col-lg-12 row">
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Pick a Date</label>
+                                <input type="date" class="form-control" value="<?php echo e($item->date); ?>" required name="date" />
+                            </div>
+                            <div class="col-md-4">
+                                <label for="validationDefault02" class="form-label">Reference Number</label>
+                                <input type="text" class="form-control" id="validationDefault02" value="<?php echo e($item->ref); ?>" name="ref" />
+                            </div>                            
+                            <div class="col-md-4">
+                                <label  class="form-label">Order Status</label>
+                                <select class="form-select" required name="status">
+                                    <option selected disabled value="">Choose...</option>
+                                    <option value="pending" <?php if($item->status == 'pending'): ?> selected <?php endif; ?>>Pending</option>
+                                    <option value="received" <?php if($item->status == 'received'): ?> selected <?php endif; ?>>Received</option>
+                                    <option value="ordered" <?php if($item->status == 'ordered'): ?> selected <?php endif; ?>>Ordered</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
+                        <hr>
+
+                        <div class="col-lg-12">
+                            <div class="row height d-flex justify-content-center align-items-center">
+
+                                <div class="col-md-8">
+                                    <div class="search">
+                                        <input type="text" id="search" class="form-control" placeholder="product search here">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+
+                        <div class="col-lg-12 mt-2">
+                            <table class="table table-centered table-nowrap mb-0" id="product_table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Size</th>
+                                        <th>Color</th>
+                                        <th>Quantity</th>
+                                        <th>Sell Price</th>
+                                        <th>Subtotal</th>
+                                        <th style="width: 125px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="data">
+                                    <?php $__currentLoopData = $item->lines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $line): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <tr>
+                                            <td><?php echo e($line->products->name); ?></td>
+                                            <td><?php echo e($line->variation->size->title); ?></td>
+                                            <td><?php echo e($line->variation->color->name); ?></td>
+                                            <td>
+                                                <input class="form-control quantity" name="quantity[]" type="number" value="<?php echo e($line->quantity); ?>" required min="1"/>
+                                                <input type="hidden" name="product_id[]" value="<?php echo e($line->product_id); ?>" required/>
+                                                <input type="hidden" name="variation_id[]" value="<?php echo e($line->variation_id); ?>"/>
+                                                <input type="hidden" name="purchase_line_id[]" value="<?php echo e($line->id); ?>"/>
+                                            </td>
+                                            <td><input class="form-control unit_price" name="unit_price[]" type="number" value="<?php echo e($line->products->purchase_price); ?>" required/></td>
+                                            <td class="row_total"><?php echo e($line->products->purchase_price); ?></td>
+                                            <td><a class="remove btn btn-sm btn-danger"> - 
+                                        </tr> 
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </tbody>
+                            </table>
+                        </div>
+
+
+                        <div class="col-lg-12 row mt-3">
+                            <div class="col-md-6">
+                                <label  class="form-label"> Note</label>
+                                <textarea class="form-control" name="note" placeholder="note"><?php echo e($item->note); ?></textarea>
+                            </div> 
+
+                            <div class="col-md-3">
+                                <label  class="form-label">Purchase Total</label>
+                                <input type="text" class="form-control" value="00" name="amount" id="purchase_total" />
+                            </div> 
+                            <hr>
+                        </div>
+
+
+
+                        <div class="col-12 mt-2">
+                            <button class="btn btn-success" type="submit">Update Purchase</button>
+                        </div>
+                    </div>
+
+                </form>
+       
+            </div> <!-- end card-body-->
+        </div> <!-- end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+<?php $__env->stopSection(); ?> 
+
+<?php $__env->startPush('js'); ?>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    var path = "<?php echo e(route('admin.getPurchaseProduct')); ?>";
+    const products=[];
+    calculateSum();
+    $( "#search" ).autocomplete({
+        selectFirst: true, //here
+        minLength: 2,
+        source: function( request, response ) {
+          $.ajax({
+            url: path,
+            type: 'GET',
+            dataType: "json",
+            data: {
+               search: request.term
+            },
+            success: function( data ) {
+                
+                if (data.length ==0) {
+                    toastr.error('Product Not Found');
+                }
+                else if (data.length ==1) {
+
+                    if(products.indexOf(data[0].id) ==-1){
+                        productEntry(data[0]);
+                        products.push(data[0].id);
+                    }
+                    
+                    $('#search').val('');
+
+
+                    
+                }else if (data.length >1) {
+                    response(data);
+                }
+            }
+          });
+        },
+        select: function (event, ui) {
+           
+           if(products.indexOf(ui.item.id) ==-1){
+                productEntry(ui.item);
+                products.push(ui.item.id);
+            }
+
+           $('#search').val('');
+           return false;
+        }
+      });
+
+    function productEntry(item){
+
+        $.ajax({
+            url: '<?php echo e(route("admin.purchaseProductEntry")); ?>',
+            type: 'GET',
+            dataType: "json",
+            data: {id:item.id},
+            success: function( res ) {
+                    
+                if (res.html) {
+                    $('tbody#data').append(res.html);
+                    calculateSum();
+                }
+                
+            }
+          });
+    }
+
+    $(document).on('click',".remove",function(e) {
+        var whichtr = $(this).closest("tr");
+        whichtr.remove();  
+        calculateSum();    
+    });
+
+
+    $(document).on('blur',".quantity, .unit_price",function(e) {
+
+        calculateSum();    
+    });
+
+
+    function calculateSum() {
+        let tblrows = $("#product_table tbody tr");
+
+        let sub_total=0;
+        tblrows.each(function (index) {
+            let tblrow = $(this);
+
+            let qty=Number(tblrow.find('td input.quantity').val());
+            let amount=Number(tblrow.find('td input.unit_price').val());
+
+            let row_total=(qty *amount);
+            tblrow.find('td.row_total').text(row_total.toFixed(2));
+            sub_total+=row_total;
+         
+            
+        });
+
+        $('input#purchase_total').val(sub_total.toFixed(2));
+    }
+
+  
+</script>
+
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('backend.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/backend/purchase/edit.blade.php ENDPATH**/ ?>

@@ -48,28 +48,7 @@ use App\Http\Controllers\Auth\ResetPasswordController;
 
 
 
-Route::get('/ccc', function(){
-    // Artisan::call('config:clear');
-    // Artisan::call('config:cache');
-    // Artisan::call('view:clear');
-    // Artisan::call('view:cache'); 
-    Artisan::call('optimize:clear'); 
-     dd('ok');
-});
-Route::get('/d', function(){
-    Artisan::call('down'); 
-     dd('down');
-});
-Route::get('/u', function(){
-    Artisan::call('up'); 
-     dd('up');
-});
-Route::get('/fail', function(){
-  $hash= Hash::make('user@gmail.com');
-   dd($hash);
-});
 Route::group(['as'=>'front.'], function() {
-    Route::resource('orders',UserOrderController::class);
     Route::controller(HomeController::class)->group(function(){
         Route::get('/','home')->name('home');
         Route::get('/about-us','aboutUs')->name('aboutUs');
@@ -106,7 +85,7 @@ Route::group(['as'=>'front.'], function() {
     Route::group(['middleware' => 'auth'], function() {
         
         Route::resource('dashboard',UserDashboard::class);
-        //Route::resource('orders',UserOrderController::class);
+        Route::resource('orders',UserOrderController::class);
         Route::resource('account_details',UserAccountDetailsController::class);
         Route::resource('wishlist',UserWishlistController::class);
       	Route::resource('product-reviews',ProductReviewController::class);
@@ -147,7 +126,7 @@ Route::group(['as'=>'front.'], function() {
 });
 
 
-Auth::routes();
+Auth::routes(['register' => false]);
 
 
 //backend
@@ -157,7 +136,7 @@ Route::controller(AuthController::class)->group(function(){
 });
 
 
-Route::group(['prefix' => 'admin','middleware' => 'auth','as'=>'admin.'], function() {
+Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>'admin.'], function() {
 	
   	Route::get('/Ip-block', [IPBlockController::class, 'index'])->name('ipblock');
   	

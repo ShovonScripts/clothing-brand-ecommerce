@@ -16,7 +16,7 @@ class UserOrderController extends Controller
 
     public function index(Request $request)
     {
-        $id=auth()->user()->id;
+        $id=auth()->id();
     
         $status=$request->status;
         $q=$request->q;
@@ -56,8 +56,12 @@ class UserOrderController extends Controller
     public function show($id)
     {
         
-        $item=Order::find($id);        
-      
+        $item=Order::where('id', $id)->where('user_id', auth()->id())->first();
+
+        if (!$item) {
+            abort(404);
+        }
+
 		$info=Information::first();
         return view("frontend.dashboard.show", compact('item', 'info'));
     }

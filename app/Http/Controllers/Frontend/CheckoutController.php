@@ -68,11 +68,9 @@ class CheckoutController extends Controller
             'shipping_address' => 'required',
             'note' => '',
           	'delivery_charge_id' => 'required|numeric',
-            'final_amount' => '',
-            'amount'  => ''
         ]);
         
-       
+        
         
         if(empty(auth()->user()->id)){
         	$user = User::create([
@@ -88,6 +86,11 @@ class CheckoutController extends Controller
         }
 
         $product = Product::with('variations')->where('id', $request->prd_id)->first();
+
+        if (!$product) {
+            return response()->json(['success'=>false,'msg'=>'Product not found']);
+        }
+
         // $v_id = Variation::where('product_id', $product->id)->first()->id;
         
         $quantity = $request->quantity;
@@ -99,12 +102,13 @@ class CheckoutController extends Controller
             $proQty = $quantity;
         }
         
+        $unit_price = ($product->after_discount > 0) ? $product->after_discount : $product->sell_price;
         $total_discount_val = $proQty * $product['discount'];
         
             $pr_data = [
                 'product_id' => $request->prd_id,
                 'quantity' => $proQty,
-                'unit_price' => $request['amount'],
+                'unit_price' => $unit_price,
                 'discount' => $product['discount'],
                 'is_stock' => $product['is_stock'],
                 'variation_id' => $request['variation_id']
@@ -129,7 +133,7 @@ class CheckoutController extends Controller
         }
 
        
-        $data['assign_user_id'] = 1113;
+        $data['assign_user_id'] = !empty($verified_users) ? $verified_users[0] : null;
        
         // Order Assign Among Users End
 
@@ -138,6 +142,8 @@ class CheckoutController extends Controller
         $data['invoice_no']=rand(111111,999999);
         $data['discount']= $total_discount_val;
         $data['shipping_charge']= $charge;
+        $data['amount'] = ($unit_price + $product['discount']) * $proQty;
+        $data['final_amount'] = ($unit_price * $proQty) + $charge;
         $data['courier_id']=3;
         
         DB::beginTransaction();
@@ -146,6 +152,7 @@ class CheckoutController extends Controller
             unset($data['payment_method']);            
 
             $order=Order::create($data);
+            session()->put('placed_order_id', $order->id);
             
 
             if (!empty($pr_data)) {
@@ -184,11 +191,12 @@ class CheckoutController extends Controller
                  }  else if($request->payment_method == 'stripe')
 
                      {
-                             \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                             if (empty(config('services.stripe.secret'))) { DB::rollback(); return response()->json(['success'=>false,'msg'=>'Stripe is not configured.']); }
+                              \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                               $charge = \Stripe\Charge::create([
-                                  'source' => $_POST['stripeToken'],
-                                  'description' => "10 cucumbers from Roger's Farm",
-                                  'amount' => $request->input('amount'),
+                                  'source' => $request->stripeToken,
+                                  'description' => 'Order #'.$order->invoice_no,
+                                  'amount' => (int) round($order->final_amount * 100),
                                   'currency' => 'usd'
                               ]);
 
@@ -309,7 +317,7 @@ class CheckoutController extends Controller
         }
         
        // $keyValue = array_rand($verified_users);
-        $data['assign_user_id'] = 1113;
+        $data['assign_user_id'] = !empty($verified_users) ? $verified_users[0] : null;
         
         // Order Assign Among Users End
         
@@ -328,6 +336,7 @@ class CheckoutController extends Controller
 
             unset($data['payment_method']);
             $order=Order::create($data);
+            session()->put('placed_order_id', $order->id);
 
             if (!empty($product)) {    
               
@@ -374,11 +383,12 @@ class CheckoutController extends Controller
                  }  else if($request->payment_method == 'stripe')
                 
                      {
-                             \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                             if (empty(config('services.stripe.secret'))) { DB::rollback(); return response()->json(['success'=>false,'msg'=>'Stripe is not configured.']); }
+                              \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                               $charge = \Stripe\Charge::create([
-                                  'source' => $_POST['stripeToken'],
-                                  'description' => "10 cucumbers from Roger's Farm",
-                                  'amount' => $request->input('amount'),
+                                  'source' => $request->stripeToken,
+                                  'description' => 'Order #'.$order->invoice_no,
+                                  'amount' => (int) round($order->final_amount * 100),
                                   'currency' => 'usd'         
                               ]);	
                 
@@ -452,7 +462,18 @@ class CheckoutController extends Controller
         }
 
         $product = Product::with('variations')->where('id', $request->prd_id)->first();
-        $v_id = Variation::where('product_id', $product->id)->first()->id;
+
+        if (!$product) {
+            return response()->json(['success'=>false,'msg'=>'Product not found']);
+        }
+
+        $variation = Variation::where('product_id', $product->id)->first();
+
+        if (!$variation) {
+            return response()->json(['success'=>false,'msg'=>'Product variation not found']);
+        }
+
+        $v_id = $variation->id;
         
             $pr_data = [
                 'product_id' => $product['id'],
@@ -481,8 +502,7 @@ class CheckoutController extends Controller
             }
         }
 
-        $keyValue = array_rand($verified_users);
-        $data['assign_user_id'] = $verified_users[$keyValue];
+        $data['assign_user_id'] = !empty($verified_users) ? $verified_users[array_rand($verified_users)] : null;
 
         // Order Assign Among Users End
 
@@ -500,6 +520,7 @@ class CheckoutController extends Controller
             unset($data['payment_method']);            
 
             $order=Order::create($data);
+            session()->put('placed_order_id', $order->id);
 
             if (!empty($pr_data)) {
 
@@ -537,11 +558,12 @@ class CheckoutController extends Controller
                  }  else if($request->payment_method == 'stripe')
 
                      {
-                             \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
+                             if (empty(config('services.stripe.secret'))) { DB::rollback(); return response()->json(['success'=>false,'msg'=>'Stripe is not configured.']); }
+                              \Stripe\Stripe::setApiKey(config('services.stripe.secret'));
                               $charge = \Stripe\Charge::create([
-                                  'source' => $_POST['stripeToken'],
-                                  'description' => "10 cucumbers from Roger's Farm",
-                                  'amount' => $request->input('amount'),
+                                  'source' => $request->stripeToken,
+                                  'description' => 'Order #'.$order->invoice_no,
+                                  'amount' => (int) round($order->final_amount * 100),
                                   'currency' => 'usd'
                               ]);
 
@@ -664,6 +686,7 @@ class CheckoutController extends Controller
           try {
              unset($data['payment_method']);
              $order=Order::create($data);
+            session()->put('placed_order_id', $order->id);
   
               if (!empty($product)) {
                 
@@ -751,3 +774,6 @@ class CheckoutController extends Controller
     }
 
 }
+
+
+

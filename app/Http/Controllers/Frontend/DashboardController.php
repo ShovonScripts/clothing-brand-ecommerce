@@ -21,7 +21,7 @@ class DashboardController extends Controller
         $status=$request->status;
         $q=$request->q;
         $items=Order::where('user_id', $id)->latest()->paginate(30);
-        return view('frontend.dashboard.orders','items','q','status');
+        return view('frontend.dashboard.orders', compact('items','q','status'));
     }
     public function account_details(){
         return view('frontend.dashboard.account_details');
@@ -32,13 +32,32 @@ class DashboardController extends Controller
     
     public function confirmOrder($id){
         $order=Order::find($id);
+
+        if (!$order || !$this->canViewOrder($order)) {
+            abort(404);
+        }
+
         $info=Information::first();
         return view('frontend.dashboard.thank_you', compact('order', 'info'));
     }
     
     public function confirmOrderlanding($id){
         $order=Order::find($id);
+
+        if (!$order || !$this->canViewOrder($order)) {
+            abort(404);
+        }
+
         $info=Information::first();
         return view('frontend.dashboard.thank_you_landing', compact('order', 'info'));
+    }
+
+    private function canViewOrder(Order $order)
+    {
+        if (auth()->check() && $order->user_id == auth()->id()) {
+            return true;
+        }
+
+        return session('placed_order_id') == $order->id;
     }
 }

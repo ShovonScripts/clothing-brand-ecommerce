@@ -28,23 +28,26 @@ class AuthController extends Controller
    
         $credentials = $request->only('username', 'password');
         if (Auth::attempt($credentials)) {
-            
+
+            if ((int) auth()->user()->status !== 1) {
+                Auth::logout();
+                return back()->withErrors(['username' => 'Your account is inactive.']);
+            }
+
             if(isset($request->remember))
             {
-                setcookie("user", $request->username, time()+(10 * 365 * 24 * 60 * 60));
-                setcookie("pass", $request->password, time()+(10 * 365 * 24 * 60 * 60));
+                setcookie("user", $request->username, time()+(10 * 365 * 24 * 60 * 60), "/", "", false, true);
             }
-            else 
+            else
             {
-                setcookie("user", "");
-                setcookie("pass", "");
+                setcookie("user", "", time()-3600, "/", "", false, true);
             }
-            
+
             return redirect()->intended('admin/dashboard')
                         ->withSuccess('You have Successfully loggedin');
         }
-  
-        return redirect("authorize-login")->withSuccess('Oppes! You have entered invalid credentials');
+
+        return back()->withErrors(['username' => 'Invalid credentials']);
         
     }
 
