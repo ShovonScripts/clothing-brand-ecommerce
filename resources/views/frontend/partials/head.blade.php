@@ -36,7 +36,7 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/header.css?v=007')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/update.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/newstyle.css?v=1.1')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/mens.css?v=1.0')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/mens.css?v=1.1')}}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
     @stack('css')
