@@ -793,21 +793,41 @@ body.gm-drawer-open .gm-drawer-overlay { opacity: 1; visibility: visible; }
 .gm-value {
     display: flex;
     align-items: flex-start;
-    gap: 14px;
-    padding: 30px 24px;
+    gap: 16px;
+    padding: 36px 24px;
     border-right: 1px solid var(--gm-line);
+    transition: background-color .3s ease;
 }
 .gm-value:last-child { border-right: 0; }
-.gm-value i { margin-top: 2px; font-size: 20px; color: var(--gm-accent); }
-.gm-value h4 {
-    margin: 0 0 3px;
-    font-family: var(--gm-body) !important;
-    font-size: 11px;
-    font-weight: 500 !important;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
+.gm-value:hover { background-color: var(--gm-sand); }
+.gm-value-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--gm-accent);
+    color: #fff;
+    font-size: 18px;
+    transition: transform .3s ease, background-color .3s ease;
 }
-.gm-value p { margin: 0; font-size: 13px; color: var(--gm-muted); }
+.gm-value:hover .gm-value-icon {
+    transform: scale(1.1);
+    background-color: var(--gm-accent-dark);
+}
+.gm-value-title {
+    margin: 0 0 4px;
+    font-family: var(--gm-body) !important;
+    font-size: 12px;
+    font-weight: 500 !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gm-ink);
+    line-height: 1.3;
+}
+.gm-value-text { margin: 0; font-size: 14px; color: var(--gm-muted); line-height: 1.5; }
 
 /* Lookbook */
 .gm-lookbook {
@@ -1429,18 +1449,21 @@ body.gm-drawer-open .gm-drawer-overlay { opacity: 1; visibility: visible; }
     .gm-card-price { font-size: 12.5px; gap: 6px; }
     .gm-card-quick { display: none; }
     .gm-card-wish { opacity: 1; transform: none; width: 30px; height: 30px; }
-.gm-cats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .gm-cats { grid-template-columns: repeat(2, 1fr); gap: 10px; }
     .gm-cat { aspect-ratio: 4 / 5; }
     .gm-cat-content { left: 14px; right: 14px; bottom: 12px; }
     .gm-cat-content h3 { font-size: 10.5px; }
     .gm-promo, .gm-promo--tall { min-height: 380px; }
     .gm-promo-content { padding: 24px; }
     .gm-values { grid-template-columns: 1fr; }
-    .gm-value { border-right: 0; border-bottom: 1px solid var(--gm-line); padding: 20px 0; }
+    .gm-value { border-right: 0; border-bottom: 1px solid var(--gm-line); padding: 24px 0; }
     .gm-value:last-child { border-bottom: 0; }
+    .gm-value-icon { width: 44px; height: 44px; font-size: 16px; }
+    .gm-value-title { font-size: 11px; }
+    .gm-value-text { font-size: 13px; }
     .gm-lookbook { min-height: 420px; }
     .gm-lookbook-content h2 { font-size: 38px; }
-.gm-newsletter { padding: 56px 0; }
+    .gm-newsletter { padding: 56px 0; }
     .gm-newsletter-form { flex-direction: column; }
     .gm-newsletter-fields { flex-direction: column; }
     .gm-newsletter-fields button { width: 100%; }
