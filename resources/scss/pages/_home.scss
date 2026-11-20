@@ -1,2 +1,438 @@
-// Home page specific styles
-// Only styles that cannot be expressed via components/utilities
+@use '../tokens' as *;
+
+@use '../components/section-header';
+@use '../components/button';
+@use '../components/container-grid';
+
+/* ==========================================================================
+   HERO SECTION
+   ========================================================================== */
+
+.gm-hero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: var(--c-bg-2);
+}
+
+.gm-hero__media {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.gm-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--d-slow) var(--e-out);
+}
+
+.gm-hero:hover .gm-hero__media img {
+  transform: scale(1.02);
+}
+
+.gm-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(16, 16, 16, 0.45) 0%,
+    rgba(16, 16, 16, 0.15) 50%,
+    transparent 100%
+  );
+  z-index: 1;
+}
+
+.gm-hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  color: var(--c-bg);
+  padding: var(--s-8) var(--gutter);
+}
+
+.gm-hero__eyebrow {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  margin-bottom: var(--s-3);
+  opacity: 0.9;
+}
+
+.gm-hero__title {
+  font-size: clamp(var(--t-2xl), 5vw, var(--t-3xl));
+  font-weight: 500;
+  font-family: var(--f-display);
+  line-height: var(--lh-tight);
+  margin: 0 0 var(--s-3);
+  color: var(--c-bg);
+}
+
+.gm-hero__text {
+  font-size: var(--t-lg);
+  opacity: 0.9;
+  margin: 0 0 var(--s-5);
+  max-width: 480px;
+  line-height: var(--lh-base);
+}
+
+.gm-hero__actions {
+  display: flex;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.gm-hero__btn {
+  min-width: 180px;
+}
+
+/* Carousel controls */
+.gm-hero__controls {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  transform: translateY(-50%);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--s-4);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.gm-hero__control {
+  pointer-events: auto;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--r-full);
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: var(--c-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--d-fast) var(--e-out);
+  backdrop-filter: blur(4px);
+}
+
+.gm-hero__control:hover {
+  background: var(--c-bg);
+  color: var(--c-ink-900);
+}
+
+.gm-hero__control:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.gm-hero__control svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* Indicators */
+.gm-hero__indicators {
+  position: absolute;
+  bottom: var(--s-5);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--s-2);
+  z-index: 3;
+}
+
+.gm-hero__indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all var(--d-fast) var(--e-out);
+}
+
+.gm-hero__indicator.active,
+.gm-hero__indicator:hover {
+  background: var(--c-bg);
+  transform: scale(1.2);
+}
+
+.gm-hero__indicator:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+/* Mobile hero adjustments */
+@media (max-width: 767px) {
+  .gm-hero {
+    aspect-ratio: 4 / 5;
+  }
+
+  .gm-hero__content {
+    padding: var(--s-6) var(--gutter);
+    max-width: 100%;
+  }
+
+  .gm-hero__title {
+    font-size: clamp(var(--t-xl), 8vw, var(--t-2xl));
+  }
+
+  .gm-hero__text {
+    font-size: var(--t-md);
+  }
+
+  .gm-hero__actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .gm-hero__btn {
+    width: 100%;
+    min-width: auto;
+  }
+
+  .gm-hero__control {
+    width: 40px;
+    height: 40px;
+  }
+
+  .gm-hero__indicators {
+    bottom: var(--s-4);
+  }
+}
+
+/* ==========================================================================
+   CATEGORIES SECTION
+   ========================================================================== */
+
+.gm-categories {
+  /* Uses .gm-section from container-grid */
+}
+
+.gm-categories__grid {
+  display: grid;
+  gap: var(--s-4);
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (min-width: 640px) {
+  .gm-categories__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .gm-categories__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.gm-category-card {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  transition: box-shadow var(--d-base) var(--e-out), transform var(--d-fast) var(--e-out), border-color var(--d-fast) var(--e-out);
+}
+
+.gm-category-card:hover {
+  box-shadow: var(--sh-2);
+  transform: translateY(-2px);
+  border-color: var(--c-accent);
+}
+
+.gm-category-card__image-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--c-bg-2);
+}
+
+.gm-category-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--d-slow) var(--e-out);
+}
+
+.gm-category-card:hover .gm-category-card__image {
+  transform: scale(1.05);
+}
+
+.gm-category-card__content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-4);
+  min-height: 100px;
+}
+
+.gm-category-card__name {
+  font-size: var(--t-lg);
+  font-weight: 500;
+  font-family: var(--f-display);
+  color: var(--c-ink-900);
+  margin: 0 0 var(--s-1);
+  transition: color var(--d-fast) var(--e-out);
+}
+
+.gm-category-card:hover .gm-category-card__name {
+  color: var(--c-accent);
+}
+
+.gm-category-card__meta {
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+  margin: 0;
+}
+
+@media (max-width: 767px) {
+  .gm-categories__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .gm-category-card__content {
+    min-height: 80px;
+    padding: var(--s-3);
+  }
+
+  .gm-category-card__name {
+    font-size: var(--t-md);
+  }
+}
+
+/* ==========================================================================
+   VALUES / PROMISE SECTION
+   ========================================================================== */
+
+.gm-values {
+  background: var(--c-ink-900);
+  color: var(--c-bg);
+}
+
+.gm-values__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-6);
+  text-align: center;
+}
+
+.gm-value {
+  padding: var(--s-4);
+}
+
+.gm-value__icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto var(--s-4);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--c-accent);
+  transition: all var(--d-base) var(--e-out);
+}
+
+.gm-value:hover .gm-value__icon {
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+  transform: scale(1.05);
+}
+
+.gm-value__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.gm-value__title {
+  font-size: var(--t-lg);
+  font-weight: 500;
+  font-family: var(--f-display);
+  margin: 0 0 var(--s-2);
+  color: var(--c-bg);
+}
+
+.gm-value__text {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+  font-size: var(--t-md);
+  line-height: var(--lh-base);
+}
+
+/* ==========================================================================
+   SECTION SPACING UTILITIES (specific to home page)
+   ========================================================================== */
+
+.gm-section--home-hero {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.gm-section--home-values {
+  padding: var(--s-8) 0;
+}
+
+@media (max-width: 767px) {
+  .gm-section--home-values {
+    padding: var(--s-7) 0;
+  }
+}
+
+/* ==========================================================================
+   PRODUCT GRID ENHANCEMENTS
+   ========================================================================== */
+
+/* Ensure product grid has proper spacing on home page */
+.gm-home .gm-product-grid {
+  gap: var(--s-4);
+}
+
+/* Skeleton loading state for product cards */
+.gm-home .gm-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--c-bg-2) 25%,
+    var(--c-bg-3) 50%,
+    var(--c-bg-2) 75%
+  );
+  background-size: 200% 100%;
+  animation: gm-shimmer 1.5s infinite;
+  border-radius: var(--r-sm);
+}
+
+@keyframes gm-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ==========================================================================
+   REDUCED MOTION
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .gm-hero__media img,
+  .gm-category-card__image,
+  .gm-value__icon,
+  .gm-product-card__image,
+  .gm-skeleton {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .gm-hero:hover .gm-hero__media img,
+  .gm-category-card:hover .gm-category-card__image,
+  .gm-product-card:hover .gm-product-card__image {
+    transform: none;
+  }
+}
