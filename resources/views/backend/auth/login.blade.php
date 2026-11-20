@@ -4,101 +4,238 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Admin Login | {{ $info->site_name ?? 'GENTRY' }}</title>
+    <title>Admin Login | {{ $info->site_name ?? 'Admin Panel' }}</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <!-- Font: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    @vite(['resources/scss/admin.scss', 'resources/js/app.js'])
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --admin-accent: #15bf81;
+            --admin-accent-hover: #10a871;
+            --admin-dark: #111827;
+            --admin-surface: #ffffff;
+            --admin-bg: #f4f6fb;
+            --admin-border: #e5e7eb;
+            --admin-text: #1f2937;
+            --admin-muted: #6b7280;
+            --admin-radius: 16px;
+        }
+        
+        * { box-sizing: border-box; }
+        
+        body, html {
+            margin: 0; padding: 0; height: 100%;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--admin-bg);
+        }
+        
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        
+        .login-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--admin-surface);
+            border-radius: var(--admin-radius);
+            box-shadow: 0 20px 60px rgba(17,24,39,.1);
+            border: 1px solid var(--admin-border);
+            overflow: hidden;
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, var(--admin-dark) 0%, #1e293b 100%);
+            padding: 2.5rem 2rem;
+            text-align: center;
+            position: relative;
+        }
+        
+        .login-logo {
+            width: 72px; height: 72px;
+            border-radius: 16px;
+            background: var(--admin-surface);
+            padding: 10px;
+            margin: 0 auto 1.25rem;
+            box-shadow: 0 8px 24px rgba(0,0,0,.15);
+        }
+        
+        .login-header h2 { color: #fff; margin: 0; font-size: 1.5rem; font-weight: 700; }
+        .login-header p { color: rgba(255,255,255,.6); margin: .5rem 0 0; font-size: .9375rem; }
+        
+        .login-body { padding: 2.5rem 2rem; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label {
+            display: block; font-weight: 500; color: var(--admin-text);
+            margin-bottom: .5rem; font-size: .875rem;
+        }
+        
+        .input-wrapper { position: relative; }
+        .input-wrapper .input-icon {
+            position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
+            color: var(--admin-muted); font-size: 1.1rem; pointer-events: none;
+            transition: color .2s;
+        }
+        .input-wrapper:focus-within .input-icon { color: var(--admin-accent); }
+        
+        .form-control {
+            width: 100%; padding: .75rem 1rem .75rem 3rem;
+            border: 1px solid var(--admin-border); border-radius: 10px;
+            font-size: .9375rem; color: var(--admin-text); background: var(--admin-surface);
+            transition: border-color .2s, box-shadow .2s;
+        }
+        .form-control:focus {
+            outline: none; border-color: var(--admin-accent);
+            box-shadow: 0 0 0 4px rgba(21,191,129,.15);
+        }
+        .form-control::placeholder { color: var(--admin-muted); }
+        
+        .form-options { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .form-check { display: flex; align-items: center; gap: .5rem; }
+        .form-check-input {
+            width: 18px; height: 18px; border: 1px solid var(--admin-border);
+            border-radius: 4px; cursor: pointer; accent-color: var(--admin-accent);
+        }
+        .form-check-label { font-size: .875rem; color: var(--admin-text); cursor: pointer; }
+        
+        .forgot-link { font-size: .875rem; color: var(--admin-accent); text-decoration: none; }
+        .forgot-link:hover { text-decoration: underline; }
+        
+        .btn-login {
+            width: 100%; padding: .875rem; font-size: .9375rem; font-weight: 600;
+            background: var(--admin-accent); color: #fff; border: none; border-radius: 10px;
+            cursor: pointer; transition: background .2s, transform .1s, box-shadow .2s;
+        }
+        .btn-login:hover { background: var(--admin-accent-hover); transform: translateY(-1px); box-shadow: 0 8px 20px rgba(21,191,129,.3); }
+        .btn-login:active { transform: translateY(0); }
+        .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+        
+        .alert {
+            padding: .875rem 1rem; border-radius: 10px; margin-bottom: 1.25rem;
+            font-size: .875rem; border: none;
+        }
+        .alert-danger { background: rgba(239,68,68,.1); color: #dc2626; }
+        .alert-success { background: rgba(16,185,129,.1); color: #059669; }
+        
+        .login-footer { text-align: center; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--admin-border); }
+        .login-footer p { margin: 0; font-size: .8125rem; color: var(--admin-muted); }
+        .login-footer a { color: var(--admin-accent); text-decoration: none; font-weight: 500; }
+        .login-footer a:hover { text-decoration: underline; }
+        
+        /* Back link */
+        .back-link { display: inline-flex; align-items: center; gap: .5rem; margin-bottom: 1.5rem; color: var(--admin-muted); text-decoration: none; font-size: .875rem; }
+        .back-link:hover { color: var(--admin-accent); }
+        
+        @media (max-width: 480px) {
+            .login-wrapper { padding: 1rem; }
+            .login-header, .login-body { padding: 1.5rem; }
+        }
+    </style>
 </head>
-
-<body class="gm-admin-login-body">
-    <div class="gm-admin-login-wrapper">
-        <div class="gm-admin-login-card">
-            <div class="gm-admin-login-header">
-                <a href="{{ route('front.home') }}" target="_blank" class="gm-admin-login-logo" aria-label="{{ $info->site_name ?? 'GENTRY' }}">
-                    <img src="{{ asset('images/logo.png') }}" alt="{{ $info->site_name ?? 'GENTRY' }}" height="48">
-                </a>
-                <h1 style="font-size: var(--t-2xl); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0 0 var(--s-1);">Welcome back</h1>
-                <p style="color: var(--c-ink-500); margin: 0;">Sign in to manage your store</p>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="{{ asset('images/logo.png') }}" alt="{{ $info->site_name ?? 'Logo' }}" class="login-logo">
+                <h2>{{ $info->site_name ?? 'Admin Panel' }}</h2>
+                <p>Sign in to manage your store</p>
             </div>
-
-            <div class="gm-admin-login-body">
-                <a href="{{ route('front.home') }}" target="_blank" class="gm-admin-login-back" style="display: inline-flex; align-items: center; gap: var(--s-2); color: var(--c-ink-500); font-size: var(--t-sm); text-decoration: none; margin-bottom: var(--s-5);">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                    Back to Storefront
+            
+            <div class="login-body">
+                <a href="{{ route('front.home') }}" class="back-link" target="_blank">
+                    <i class="mdi mdi-arrow-left"></i> Back to Store
                 </a>
-
+                
                 @if(session()->has('success'))
-                    <x-ui.alert variant="success" dismissible>{{ session()->get('success') }}</x-ui.alert>
+                    <div class="alert alert-success">{{ session()->get('success') }}</div>
                 @endif
                 @if(session()->has('error'))
-                    <x-ui.alert variant="danger" dismissible>{{ session()->get('error') }}</x-ui.alert>
+                    <div class="alert alert-danger">{{ session()->get('error') }}</div>
                 @endif
                 @if($errors->any())
-                    <x-ui.alert variant="danger" dismissible>
-                        <ul style="margin: 0; padding-inline-start: var(--s-4);">
+                    <div class="alert alert-danger">
+                        <ul class="mb-0" style="padding-left: 1.25rem;">
                             @foreach($errors->all() as $error)
                                 <li>{{ $error }}</li>
                             @endforeach
                         </ul>
-                    </x-ui.alert>
-                @endif
-
-                <form method="POST" action="{{ route('admin.postLogin') }}" class="gm-admin-login-form" novalidate>
-                    @csrf
-
-                    <x-ui.input
-                        name="username"
-                        label="Username"
-                        type="text"
-                        placeholder="Enter your username"
-                        required
-                        :error="$errors->first('username')"
-                        autocomplete="username"
-                        size="lg"
-                        icon='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
-                    />
-
-                    <x-ui.input
-                        name="password"
-                        label="Password"
-                        type="password"
-                        placeholder="Enter your password"
-                        required
-                        :error="$errors->first('password')"
-                        autocomplete="current-password"
-                        size="lg"
-                        icon='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>'
-                    />
-
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin: var(--s-4) 0;">
-                        <label class="gm-checkbox" style="font-size: var(--t-sm);">
-                            <input type="checkbox" name="remember" class="gm-checkbox__input" wire:model="form.remember">
-                            <span class="gm-checkbox__box" aria-hidden="true"></span>
-                            <span class="gm-checkbox__label">Remember me</span>
-                        </label>
-                        <a href="{{ route('password.request') }}" style="color: var(--c-accent); font-size: var(--t-sm); text-decoration: none;">Forgot password?</a>
                     </div>
-
-                    <x-ui.button
-                        variant="primary"
-                        size="lg"
-                        full
-                        type="submit"
-                        :loading="$wire.loggingIn"
-                    >
-                        Sign In
-                    </x-ui.button>
+                @endif
+                
+                <form method="post" action="{{ route('admin.postLogin') }}" id="loginForm">
+                    @csrf
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="username">Username</label>
+                        <div class="input-wrapper">
+                            <i class="mdi mdi-account input-icon"></i>
+                            <input type="text" class="form-control @error('username') is-invalid @enderror" 
+                                   id="username" name="username" placeholder="Enter your username" 
+                                   value="{{ old('username') }}" required autocomplete="username">
+                        </div>
+                        @error('username')
+                            <div class="invalid-feedback d-block" style="margin-top: .375rem; font-size: .8125rem;">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="password">Password</label>
+                        <div class="input-wrapper">
+                            <i class="mdi mdi-lock input-icon"></i>
+                            <input type="password" class="form-control @error('password') is-invalid @enderror" 
+                                   id="password" name="password" placeholder="Enter your password" 
+                                   required autocomplete="current-password">
+                        </div>
+                        @error('password')
+                            <div class="invalid-feedback d-block" style="margin-top: .375rem; font-size: .8125rem;">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    
+                    <div class="form-options">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="remember" id="remember">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+                        <a href="{{ route('password.request') }}" class="forgot-link">Forgot Password?</a>
+                    </div>
+                    
+                    <button type="submit" class="btn-login" id="loginBtn">
+                        <span class="btn-text">Sign In</span>
+                        <span class="btn-loader d-none"><i class="mdi mdi-loading mdi-spin"></i></span>
+                    </button>
                 </form>
-
-                <p style="text-align: center; margin-top: var(--s-5); color: var(--c-ink-500); font-size: var(--t-sm);">
-                    Don't have access? Contact your administrator.
-                </p>
+                
+                <div class="login-footer">
+                    <p>Don't have an account? Contact your administrator.</p>
+                </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Loading state on submit
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            var btn = document.getElementById('loginBtn');
+            btn.disabled = true;
+            btn.querySelector('.btn-text').classList.add('d-none');
+            btn.querySelector('.btn-loader').classList.remove('d-none');
+        });
+        
+        // Auto-focus username
+        document.getElementById('username').focus();
+    </script>
 </body>
 </html>

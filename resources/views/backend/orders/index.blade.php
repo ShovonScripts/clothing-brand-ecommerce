@@ -1,206 +1,629 @@
 @extends('backend.app')
-
 @section('content')
-@php
-$currencySymbol = config('app.currency_symbol') ?? '৳';
-$items = $items ?? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 30);
-$searchQuery = request('q', '');
-$selectedStatus = request('status');
-$selectedCourier = request('courier_id');
-$selectedUser = request('assign_user_id');
-$dateFrom = request('date_from');
-$dateTo = request('date_to');
-$orderStatuses = getOrderStatus() ?? [];
-$couriers = $couriers ?? collect();
-$assignUsers = $assignUsers ?? collect();
-@endphp
 
-<div class="gm-admin-page">
-    {{-- Page Header --}}
-    <x-admin.page-header
-        title="Orders"
-        subtitle="Manage and track customer orders"
-        :count="$items->total()"
-    >
-        <x-slot name="breadcrumb">
-            <x-admin.page-header-breadcrumb :items="[
-                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Orders'],
-            ]" />
-        </x-slot>
+<style>
+  .ps-2, .page-title {
+      color: black !important;
+  }
+ .disable-click{
+    pointer-events:none;
+}
+.status_color{
+  color: #fff;
+  border-radius: 5px;
+  text-align: center;
+}
+.badge-primary{
+    color: #fff;
+    background: #007bff;
+}
+.badge-success {
+    color: #fff;
+    background-color: #28a745;
+}
+.badge-danger {
+    color: #fff;
+    background-color: #dc3545;
+}
+.badge-warning {
+    color: #212529;
+    background-color: #ffc107;
+}
+.badge-info {
+    color: #fff;
+    background-color: #17a2b8;
+}
+.badge-dark {
+    color: #fff;
+    background-color: #343a40;
+}
+.badge{
+  font-size: 14px !important;
+}
+</style>
 
-        <x-slot name="actions">
-            @can('order.create')
-                <a href="{{ route('admin.orders.create') }}" class="gm-btn gm-btn--primary gm-btn--sm">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    New Order
-                </a>
-            @endcan
-            <a href="{{ route('admin.orderExport') }}" class="gm-btn gm-btn--ghost gm-btn--sm">Export</a>
-        </x-slot>
-    </x-admin.page-header>
-
-    {{-- Filter Bar --}}
-    <x-admin.filter-bar
-        :filters="[
-            'status' => [
-                'label' => 'Status',
-                'type' => 'select',
-                'options' => array_merge([['value' => '', 'label' => 'All Status']], collect($orderStatuses)->map(fn(\$v, \$k) => ['value' => \$k, 'label' => ucfirst(str_replace('_', ' ', \$k))])->toArray()),
-            ],
-            'courier_id' => [
-                'label' => 'Courier',
-                'type' => 'select',
-                'options' => \$couriers->map(fn(\$c) => ['value' => \$c->id, 'label' => \$c->name])->prepend(['value' => '', 'label' => 'All Couriers'])->toArray(),
-            ],
-            'assign_user_id' => [
-                'label' => 'Assigned To',
-                'type' => 'select',
-                'options' => \$assignUsers->map(fn(\$u) => ['value' => \$u->id, 'label' => \$u->name])->prepend(['value' => '', 'label' => 'All Users'])->toArray(),
-            ],
-            'date_from' => [
-                'label' => 'From',
-                'type' => 'date',
-            ],
-            'date_to' => [
-                'label' => 'To',
-                'type' => 'date',
-            ],
-        ]"
-        :search="$searchQuery"
-        searchPlaceholder="Search by invoice, customer, SKU..."
-        :onFilterChange="true"
-    />
-
-    {{-- Orders Table --}}
-    <div class="gm-admin-table-wrapper" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden;">
-        @if($items->count())
-            <x-admin.table
-                :columns="[
-                    ['key' => 'checkbox', 'label' => '', 'align' => 'center', 'width' => '40px', 'render' => 'renderCheckbox'],
-                    ['key' => 'actions', 'label' => 'Action', 'align' => 'center', 'width' => '120px', 'render' => 'renderActions'],
-                    ['key' => 'invoice_no', 'label' => 'Invoice', 'align' => 'left', 'render' => 'renderInvoice'],
-                    ['key' => 'created_at', 'label' => 'Date', 'align' => 'left', 'render' => 'renderDate'],
-                    ['key' => 'customer', 'label' => 'Customer', 'align' => 'left', 'render' => 'renderCustomer'],
-                    ['key' => 'skus', 'label' => 'SKUs', 'align' => 'left', 'render' => 'renderSkus'],
-                    ['key' => 'status', 'label' => 'Status', 'align' => 'center', 'render' => 'renderStatus'],
-                    ['key' => 'view', 'label' => 'View', 'align' => 'center', 'width' => '80px', 'render' => 'renderView'],
-                    ['key' => 'assigned_user', 'label' => 'Assigned', 'align' => 'left', 'render' => 'renderAssigned'],
-                    ['key' => 'courier', 'label' => 'Courier', 'align' => 'left', 'render' => 'renderCourier'],
-                    ['key' => 'final_amount', 'label' => 'Amount', 'align' => 'right', 'render' => 'renderAmount'],
-                ]"
-                :rows="$items"
-                :actions="[
-                    ['type' => 'view', 'label' => 'View', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M1 12s4-8 11-8 11 8 11-8\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>', 'url' => fn(\$row) => route('admin.orders.show', \$row->id)],
-                    ['type' => 'edit', 'label' => 'Edit', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"></path><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"></path></svg>', 'url' => fn(\$row) => route('admin.orders.edit', \$row->id)],
-                    ['type' => 'print', 'label' => 'Print', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"6 9 6 2 18 2 18 9\"></polyline><path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"></path><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\"></rect></svg>', 'url' => fn(\$row) => route('admin.orders.print', \$row->id), 'attrs' => ['target' => '_blank']],
-                ]"
-                :emptyMessage="No orders found"
-                striped
-                hover
-            />
-        @else
-            <x-ui.empty-state
-                type="default"
-                title="No orders found"
-                message="Orders will appear here when customers place them."
-                action="View Storefront"
-                :actionUrl="route('front.home')"
-            />
-        @endif
-    </div>
-
-    {{-- Pagination --}}
-    @if($items->count())
-        <div class="gm-pagination-wrapper" style="margin-top: var(--s-5);">
-            <x-ui.pagination
-                :currentPage="$items->currentPage()"
-                :lastPage="$items->lastPage()"
-                :total="$items->total()"
-                :perPage="$items->perPage()"
-                :onPageChange="true"
-            />
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box">
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">SIS</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">CRM</a></li>
+                    <li class="breadcrumb-item active">Order List</li>
+                </ol>
+            </div>
+            <h4 class="page-title">Order List</h4> 
         </div>
-    @endif
-</div>
+    </div>
+</div>   
+<!-- end page title --> 
+<style>
+    .btn.btn-sm{
+        font-size: 12px;
+    }    
+</style>
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-2">
 
-@push('scripts')
+                    <div class="col-xl-7 text-left">
+                        <div class="#" style="">
+                            @can('product.create')
+                                <a href="{{ route('admin.orders.create')}}" class="btn btn-sm btn-danger mb-1"><i class="mdi mdi-basket me-1"></i> Add New Order</a>
+                            @endcan
+                            
+                            @can('product.edit')
+                                <a class="btn_modal btn btn-sm btn-info mb-1" href="{{ route('admin.assignUser')}}"><i class="mdi mdi-plus me-1"></i>
+                                    Assign User
+                                </a>
+                            @endcan
+                            <a class="btn_modal btn btn-sm btn-info mb-1" href="{{ route('admin.orderStatusUpdateMulti')}}"><i class="mdi mdi-plus me-1"></i>
+                               Status Change
+                            </a>
+                            
+                            @can('product.delete')
+                                <a class="multi_order_delete btn btn-sm btn-danger mb-1" href="{{ route('admin.deleteAllOrder')}}"><i class="mdi mdi-plus me-1"></i>
+                                    Delete All
+                                </a>
+                            @endcan
+                            @php $isPending = \App\Models\Order::where(['status' => 'pending'])->first(); @endphp
+                            <a class="multi_order_print btn btn-sm btn-success mb-1" href="{{ route('admin.orderList')}}"><i class="mdi mdi-plus me-1"></i>
+                                Print
+                            </a>                            
+                          <a class="send_to_redx btn btn-sm btn-dark mb-1" href="{{ route('admin.createRedxParcel')}}">
+                                Send to Redx
+                          </a>                          
+                          <a class="send_to_pathao btn btn-sm btn-primary mb-1" href="{{ route('admin.createPathaoParcel')}}">
+                                Send to Pathao
+                          </a>
+                          
+                          <a class="send_to_steadfast btn btn-sm btn-success mb-1" href="{{ route('admin.createSteadfastParcel')}}">
+                            Send to Steadfast
+                          </a>
+                          
+                          <div class="col-md-4">
+                            <select class="select2" name="courier_type">
+                              <option value="" disabled selected>Choose Courier Option</option>
+                              <option value="">All</option>
+                              <option value="redx">Redx</option>
+                              <option value="pathao">Pathao</option>
+                              <option value="none">None</option>
+                            </select>
+                          </div>                          
+                          <div class="col-md-4 d-none">
+                            <select class="select2" name="redx_status">
+                              <option value="" disabled selected>Choose Courier Status</option>
+                              <option value="">All</option>
+                              <option value="yes">Yes ({{$yes_count}})</option>
+                              <option value="no">No ({{$no_count}})</option>
+                            </select>
+                          </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-4 d-none">
+                        <div class="text-xl-end mt-xl-0 mt-2">                        
+                            <a type="button" href="{{ route('admin.orderExport')}}" class="btn btn-light mb-2">Export</a>
+                        </div>
+                    </div><!-- end col-->
+                </div>   
+              
+              <div class="d-none d-md-block d-lg-block">
+                <form class="row gy-2 gx-2 align-items-center justify-content-xl-start justify-content-between" id="filter_form">
+              <div class="col-12 d-flex justify-content-between align-items-center">
+           
+                <div class="d-flex">              
+                  
+                  @foreach(getOrderStatus() as $key=>$value)
+                  <label class="ps-2">
+                    <input type="radio" class="order_sts"  name="status" value="{{$key}}"/>                    
+                    @if(Auth::user()->hasRole('worker'))
+                    
+                    {{$value}} ({{\App\Models\Order::whereHas('details.product', function($q) {
+                    	$q->whereNotNull('name');
+                    })->where('status', $key)->where('assign_user_id', Auth::user()->id)->count()}})
+                    
+                    @else
+                    
+                    {{$value}} ({{\App\Models\Order::whereHas('details.product', function($q) {
+                    	$q->whereNotNull('name');
+                    })->where('status', $key)->count()}})
+                    
+                    @endif                 
+                    
+                    
+                  </label>
+                  @endforeach                  
+                  
+                                                 
+                </div>
+                 
+                <div class="col-4">
+                    <label for="inputPassword2" class="visually-hidden">Search</label>
+                    <input type="search" class="form-control" id="inputPassword2" placeholder="Search..." name="q">
+                  </div>
+                
+                  <!-- <div class="col-5 d-none">
+                                <div class="d-flex align-items-center ">
+                                    <label for="status-select" class="me-2">Status</label>
+                                    <select class="form-select" id="status-select" name="status">
+                                        <option selected value="">Choose...</option>
+                                        {{--<option value="pending" {{$status=='pending' ?'selected':''}}>Pending</option>
+                                        <option value="Processing" {{$status=='Processing' ?'selected':''}}>Processing</option>
+                                        <option value="complete" {{$status=='complete' ?'selected':''}}>Complete</option>--}}
+                                        @foreach(getOrderStatus() as $key=>$value)
+                                            <option value="{{$key}}">{{ $value }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div> !-->
+                
+                  <div class="col-auto">
+                    <label for="submit" class="visually-hidden">Submit</label>
+                    <input type="button" class="form-control btn btn-sm btn-dark py-1" id="submit_search" value="Submit">
+                  	</div>
+     				</div>
+                </form>   
+              </div>
+
+              <div class="col-sm-12 mt-2" id="rcvd_order">
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>                                    
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input check_all" value="">
+                                      </label>
+                                    </div>
+                                </th>
+
+                              	<th style="width:7%">Action</th>
+                                <th>Invoice ID</th>
+                                <th>Date Order</th>
+                                <th>Customers</th>
+                                <th>Product SKU</th>
+                                <th>Status</th>
+                                <th>View Order</th>
+                                <th>Assign User</th>
+                              	<th style="width:15%">Courier</th>
+                                <th>Amount</th>
+                               <!-- <th>Discount</th> -->
+                               
+                               <!-- <th>Due</th> -->
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $item)
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="order_checkbox" value="{{ $item->id}}">                                    
+                                </td>
+
+                              	<td>
+                                    <a href="{{$item->status === 'pending' ? 'javascript:void(0)' : route('admin.orders.show',[$item->id])}}" target="{{$item->status === 'pending' ? '' : '_blank'}}" class="action-icon " title="{{$item->status === 'pending' ? 'pending invoice will not be printed' : 'Print Invoice'}}"> <i class="fa fa-print" aria-hidden="true"></i></a>
+                                    <a href="{{ route('admin.orders.edit',[$item->id])}}" class="action-icon"> <i class="mdi mdi-square-edit-outline"></i></a>
+                                    @can('order.delete')
+                                    <a href="{{ route('admin.orders.destroy',[$item->id])}}" class="delete action-icon"> <i class="mdi mdi-delete"></i></a>
+                                    @endcan
+                                </td>
+                                <td style="color: #000;">#{{$item->invoice_no}}</td>
+                              	<td style="color: #000;">{{ \Carbon\Carbon::parse($item->created_at)->diffForHumans() }}</td>
+                                <td style="color: #000;">{{$item->first_name.' '.$item->last_name}}<br>
+                                    {{$item->shipping_address}}<br>
+                                    {{$item->mobile}} <a class="btn btn-sm btn-primary" href="tel:{{$item->mobile}}"><span>Call</span></a>
+                                </td>
+                              <td>
+                                  
+                                  <?php
+                                    foreach($item->details as $detail)
+                                    {
+                                        if(!isset($detail->product['sku']) || $detail->product['sku'] == '')
+                                        {
+                                            ?> <span style="color: red;">Unavailable</span> <?php
+                                            
+                                        } else 
+                                        {
+                                            echo $detail->product['sku'];
+                                        }
+                                    }
+                                  ?>
+                                
+                                </td>
+                                <td style="width:15%"><a class="btn_modal" href="{{ route('admin.orderStatus', $item->id)}}">
+                                      @if ($item->status == 'pending')
+                                      <span class="badge badge-primary">{{$item->status}}</span>
+                                      @elseif ($item->status == 'processing')
+                                      <span class="badge badge-info">{{$item->status}}</span>
+                                      @elseif ($item->status == 'on_the_way')
+                                      <span class="badge badge-dark">{{$item->status}}</span>
+                                      @elseif ($item->status == 'on_hold')
+                                      <span class="badge badge-warning">{{$item->status}}</span>
+                                      @elseif ($item->status == 'complete')
+                                      <span class="badge badge-success">{{$item->status}}</span>
+                                      @elseif ($item->status == 'cancell')
+                                      <span class="badge badge-danger">{{$item->status}}</span>
+                                      @endif
+                                        
+                                    </a>
+                                </td>
+                                <td><a href="{{ route('admin.orders.view', $item->id)}}" target="_blank">
+                                        
+                                        <span class="badge badge-info">View Order</span>                              
+                                    </a>
+                                </td>
+
+                                <td style="color: #000;">{{ $item->assign?$item->assign->username:''}}</td>
+                                <td style="color: #000;">{{ $item->courier?$item->courier->name:''}} <br> {{ $item->courier_tracking_id ?? ''}}
+                              		<br> {{ $item->area_name ?? ''}}
+                              	</td>
+								            <td style="color: #000;">
+                                  @php 
+                                    $final_amount = $item->final_amount;                                    
+                                    $fa = intval($final_amount);                                    
+                                   echo $fa;                                    
+                                  @endphp                             
+                              </td>  
+                               
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                  	 </div>
+                    <p>{!! urldecode(str_replace("/?","?",$items->appends(Request::all())->render())) !!}</p>
+                </div>
+            </div> <!-- end card-body-->
+        </div> <!-- end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+@endsection 
+
+@push('js')
+<script src="{{ asset('backend/js/order.js')}}"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Filter change handler
-        document.addEventListener('filter-change', function(e) {
-            const params = new URLSearchParams(window.location.search);
-            const key = e.detail.key;
-            const value = e.detail.value;
-            
-            if (key === 'search') {
-                if (value) params.set('q', value);
-                else params.delete('q');
-            } else if (key === 'date_from' || key === 'date_to') {
-                if (value) params.set(key, value);
-                else params.delete(key);
-            } else {
-                if (value) params.set(key, value);
-                else params.delete(key);
+$(document).ready(function(){
+  
+  $("select[name='redx_status']").on('change', function(){
+      getOrderList();
+  });   
+  
+  $("select[name='courier_type']").on('change', function(){
+      getOrderList();
+  });  
+  
+  $('.order_sts').on('click', function(){
+      getOrderList();
+  });
+  
+  function getOrderList()
+  {
+   	  var statusValue = $("input[name='status']:checked").val();
+      var redx_status = $("select[name='redx_status']").val();
+      var courier_type = $("select[name='courier_type']").val();
+      $.ajax({
+        type: 'GET',
+      	url: "{{ route('admin.status_wise_order') }}",
+        data: {statusValue, redx_status, courier_type},
+        success: function(res){
+      		if(res.success == true){            
+              $('#rcvd_order').html(res.view);             	
             }
-            params.set('page', '1');
-            window.location.href = '{{ route("admin.orders.index") }}?' + params.toString();
-        });
-
-        // Clear filters
-        document.addEventListener('clear-filters', function() {
-            window.location.href = '{{ route("admin.orders.index") }}';
-        });
-
-        // Pagination
-        document.addEventListener('page-change', function(e) {
-            const params = new URLSearchParams(window.location.search);
-            params.set('page', e.detail.page);
-            window.location.href = '{{ route("admin.orders.index") }}?' + params.toString();
-        });
-
-        // Checkbox handling
-        document.addEventListener('change', function(e) {
-            if (e.target.matches('.check_all')) {
-                const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-                checkboxes.forEach(cb => cb.checked = e.target.checked);
+        }     
+      }); 
+  }
+  
+    $('#submit_search').on('click', function(){
+      var searchValue = $("input[name='q']").val();
+      $.ajax({
+        type: 'GET',
+      	url: "{{ route('admin.searchOrder') }}",
+        data: {searchValue},
+        success: function(res){
+      		if(res.success == true){            
+              $('#rcvd_order').html(res.view);             	
             }
-        });
-
-        // Bulk actions
-        document.addEventListener('bulk-action', function(e) {
-            const action = e.detail.action;
-            const ids = Array.from(document.querySelectorAll('input[name="ids[]"]:checked')).map(cb => cb.value);
-            
-            if (!ids.length) {
-                if (window.toastr) toastr.warning('No orders selected');
-                return;
-            }
-            
-            if (action === 'delete') {
-                if (!confirm('Delete selected orders?')) return;
-            }
-            
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            ids.forEach(id => formData.append('ids[]', id));
-            
-            const url = action === 'delete' 
-                ? '{{ route("admin.orders.bulkDelete") }}'
-                : '{{ route("admin.orders.bulkUpdate") }}';
-            formData.append('action', action);
-            
-            fetch(url, { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (window.toastr) toastr.success(data.msg);
-                    window.location.reload();
-                } else {
-                    if (window.toastr) toastr.error(data.msg || 'Failed');
-                }
-            });
-        });
+        }     
+      });
+      
     });
+
+    $(".check_all").on('change',function(){
+      $(".order_checkbox").prop('checked',$(this).is(":checked"));
+    });
+
+    $(document).on('submit', 'form#order_status_update_form', function(e){
+        e.preventDefault();
+        var url = $(this).attr('action');
+        var method = $(this).attr('method');
+        let status=$(document).find('select#multi_status').val();
+    
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select An Order First !');
+            return ;
+        }
+        
+        $.ajax({
+           type:'GET',
+           url:url,
+           data:{status,order_ids},
+           success:function(res){
+               if(res.status==true){
+                toastr.success(res.msg);
+                window.location.reload();
+                
+            }else if(res.status==false){
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    });
+
+    $(document).on('submit', 'form#order_assign_form', function(e){
+        e.preventDefault();
+        var url = $(this).attr('action');
+        var method = $(this).attr('method');
+        let assign_user_id=$(document).find('select#assign_user_id').val();
+    
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select An Order First !');
+            return ;
+        }
+        
+        $.ajax({
+           type:'GET',
+           url:url,
+           data:{assign_user_id,order_ids},
+           success:function(res){
+               if(res.status==true){
+                toastr.success(res.msg);
+                window.location.reload();
+                
+            }else if(res.status==false){
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    });
+
+    $(document).on('click', 'a.multi_order_delete', function(e){
+        e.preventDefault();
+        var url = $(this).attr('href');
+    
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select An Order First !');
+            return ;
+        }
+        
+        $.ajax({
+           type:'GET',
+           url:url,
+           data:{order_ids},
+           success:function(res){
+               if(res.status==true){
+                toastr.success(res.msg);
+                window.location.reload();
+                
+            }else if(res.status==false){
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    }); 
+    
+    $(document).on('click', 'a.multi_order_print', function(e){
+        e.preventDefault();
+        var url = $(this).attr('href');
+    
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select Atleast One Order!');
+            return ;
+        }
+        
+        $.ajax({
+           type:'GET',
+           url,
+           data:{order_ids},
+           success:function(res){
+               if(res.status==true){
+                   console.log(res.items, res.info);                          
+                   var myWindow = window.open("", "_blank");                   
+  				   myWindow.document.write(res.view);                   
+                // toastr.success(res.msg);
+                // window.location.reload();
+                   
+            }else if(res.status==false){
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    }); 
+  
+  
+  //Redx Courier Service
+  $(document).on('click', 'a.send_to_redx', function(e){
+        e.preventDefault();
+    // 	var statusValue = $("input[name='status']:checked").val();
+        var url = $(this).attr('href');
+    	let link = $(this);
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select Atleast One Order!');
+            return ;
+        }        
+    	
+        // else if(statusValue != 'on_the_way'){
+        //     toastr.error('Only On The Way Orders are Accepted!');
+        //     return ;
+        // }
+    	
+        
+        $.ajax({
+           type:'GET',
+           url,
+           data:{order_ids},
+           beforeSend: function(){
+             link.addClass('disable-click');
+             link.text('Please wait...');
+           },
+           success:function(res){
+               link.removeClass('disable-click');
+               link.text('Send to Redx');
+               if(res.status){               
+                toastr.success(res.msg);
+                   
+            }else{
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    });
+  
+  //Pathao Courier Service
+  $(document).on('click', 'a.send_to_pathao', function(e){
+        e.preventDefault();
+    	var statusValue = $("input[name='status']:checked").val();
+        var url = $(this).attr('href');
+    	let link = $(this);
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select Atleast One Order!');
+            return ;
+        }        
+    	
+        else if(statusValue != 'on_the_way'){
+            toastr.error('Only On The Way Orders are Accepted!');
+            return ;
+        }
+    	
+        
+        $.ajax({
+           type:'GET',
+           url,
+           data:{order_ids},
+           beforeSend: function(){
+             link.addClass('disable-click');
+             link.text('Please wait...');
+           },
+           success:function(res){
+               link.removeClass('disable-click');
+               link.text('Send to Pathao');
+               if(res.status){               
+                toastr.success(res.msg);
+                   
+            }else{
+                toastr.error(`Invoice :${res.invoice} something went wrong!`);
+              	console.log(res.errors);
+            }
+           }
+        });
+    
+    });
+
+  //Steadfast Courier Service
+  $(document).on('click', 'a.send_to_steadfast', function(e){
+        e.preventDefault();
+    	var statusValue = $("input[name='status']:checked").val();
+        var url = $(this).attr('href');
+    	let link = $(this);
+        var order = $('input.order_checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var order_ids=order.get();
+        
+        if(order_ids.length ==0){
+            toastr.error('Please Select Atleast One Order!');
+            return ;
+        }        
+    	
+        // else if(statusValue != '0'){
+        //     toastr.error('Only On The Way Orders are Accepted!');
+        //     return ;
+        // }
+    	
+        
+        $.ajax({
+           type:'GET',
+           url,
+           data:{order_ids},
+           beforeSend: function(){
+             link.addClass('disable-click');
+             link.text('Please wait...');
+           },
+           success:function(res){
+               link.removeClass('disable-click');
+               link.text('Send to Steadfast');
+               if(res.status){               
+                toastr.success(res.msg);
+                   
+            }else{
+                toastr.error(`Invoice :${res.invoice} something went wrong!`);
+              	console.log(res.errors);
+            }
+           }
+        });
+    
+    });
+    
+
+    
+
+})
+  
 </script>
 @endpush

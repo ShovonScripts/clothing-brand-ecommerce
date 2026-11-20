@@ -1,314 +1,397 @@
 @extends('backend.app')
-
+@push('css')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.css" />
+@endpush
 @section('content')
-@php
-$customers = $customers ?? collect();
-$products = $products ?? collect();
-$statuses = $statuses ?? getOrderStatus() ?? [];
-$couriers = $couriers ?? collect();
-$assignUsers = $assignUsers ?? collect();
-$currencySymbol = config('app.currency_symbol') ?? '৳';
-@endphp
-
-<form method="POST" action="{{ route('admin.orders.store') }}" class="gm-admin-form" novalidate>
-    @csrf
-
-    {{-- Save Bar --}}
-    <x-admin.save-bar
-        :dirty="$wire.dirty ?? false"
-        :saving="$wire.saving ?? false"
-        onSave="submit"
-        onCancel="goBack"
-        saveText="Create Order"
-        cancelText="Cancel"
-    />
-
-    <div class="gm-admin-form-layout" style="display: grid; grid-template-columns: 1fr 380px; gap: var(--s-8);">
-        {{-- Main Form --}}
-        <div class="gm-admin-form-main">
-            <x-admin.form-row
-                :fields="[
-                    ['key' => 'first_name', 'label' => 'First Name', 'type' => 'text', 'required' => true, 'placeholder' => 'First name'],
-                    ['key' => 'last_name', 'label' => 'Last Name', 'type' => 'text', 'required' => true, 'placeholder' => 'Last name'],
-                ]"
-            />
-
-            <x-admin.form-row
-                :fields="[
-                    ['key' => 'email', 'label' => 'Email', 'type' => 'email', 'placeholder' => 'customer@example.com'],
-                    ['key' => 'mobile', 'label' => 'Phone', 'type' => 'tel', 'required' => true, 'placeholder' => '01XXXXXXXXX'],
-                ]"
-            />
-
-            <x-admin.form-row
-                :fields="[
-                    ['key' => 'shipping_address', 'label' => 'Shipping Address', 'type' => 'textarea', 'rows' => 3, 'required' => true, 'placeholder' => 'Full delivery address'],
-                ]"
-                :columns="1"
-            />
-
-            <x-admin.form-row
-                :fields="[
-                    ['key' => 'status', 'label' => 'Order Status', 'type' => 'select', 'required' => true, 'options' => array_merge([['value' => '', 'label' => 'Select Status']], collect($statuses)->map(fn(\$v, \$k) => ['value' => \$k, 'label' => ucfirst(str_replace('_', ' ', \$k))])->toArray())],
-                    ['key' => 'courier_id', 'label' => 'Courier', 'type' => 'select', 'options' => \$couriers->pluck('name', 'id')->prepend(['', 'Select Courier'])->toArray()],
-                ]"
-            />
-
-            <x-admin.form-row
-                :fields="[
-                    ['key' => 'assign_user_id', 'label' => 'Assigned To', 'type' => 'select', 'options' => \$assignUsers->pluck('name', 'id')->prepend(['', 'Unassigned'])->toArray()],
-                    ['key' => 'payment_method', 'label' => 'Payment Method', 'type' => 'select', 'options' => [['value' => '', 'label' => 'Select Method'], ['value' => 'cash', 'label' => 'Cash on Delivery'], ['value' => 'bkash', 'label' => 'bKash'], ['value' => 'card', 'label' => 'Card/Online']]],
-                ]"
-            />
-
-
-            {{-- Order Items --}}
-            <div style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); margin-top: var(--s-6);">
-                <h3 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0 0 var(--s-4);">Order Items</h3>
-                
-                <div id="order-items" style="display: flex; flex-direction: column; gap: var(--s-3);">
-                    {{-- Initial empty row --}}
-                    <div class="order-item-row" style="display: grid; grid-template-columns: 60px 1fr 80px 100px 100px 80px 80px 60px; gap: var(--s-2); align-items: center; padding: var(--s-3); background: var(--c-bg-2); border-radius: var(--r-md);">
-                        <div style="width: 60px; height: 60px; border-radius: var(--r-md); background: var(--c-bg); display: flex; align-items: center; justify-content: center;">
-                            <x-ui.skeleton variant="box" style="width: 100%; height: 100%;" />
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 2px;">
-                            <select name="items[0][product_id]" class="gm-input gm-input--sm product-select" required>
-                                <option value="">Select Product</option>
-                                @foreach($products as $product)
-                                    <option value="{{ $product->id }}" data-price="{{ $product->sell_price }}" data-stock="{{ $product->is_stock }}" data-sku="{{ $product->sku }}">{{ $product->name }} ({{ $product->sku }})</option>
-                                @endforeach
-                            </select>
-                            <input type="hidden" name="items[0][variation_id]" class="variation-id-input">
-                        </div>
-                        <input type="text" name="items[0][size]" class="gm-input gm-input--sm" placeholder="Size" readonly style="background: var(--c-bg-2);">
-                        <input type="text" name="items[0][color]" class="gm-input gm-input--sm" placeholder="Color" readonly style="background: var(--c-bg-2);">
-                        <input type="number" name="items[0][quantity]" class="gm-input gm-input--sm" value="1" min="1" max="99" style="width: 80px;">
-                        <input type="number" name="items[0][price]" class="gm-input gm-input--sm" step="0.01" min="0" placeholder="0.00" style="width: 100px;">
-                        <input type="number" name="items[0][discount]" class="gm-input gm-input--sm" step="0.01" min="0" value="0" placeholder="0.00" style="width: 80px;">
-                        <div style="font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900);" class="subtotal-display">0.00</div>
-                        <button type="button" class="gm-btn gm-btn--ghost gm-btn--sm gm-btn--danger remove-item" style="width: 36px; height: 36px; padding: 0;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <div style="margin-top: var(--s-3);">
-                    <button type="button" id="add-item-btn" class="gm-btn gm-btn--secondary gm-btn--sm">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        Add Item
-                    </button>
-                </div>
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box">
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">SIS</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">CRM</a></li>
+                    <li class="breadcrumb-item active">Order Create</li>
+                </ol>
             </div>
-        </div>
-
-        {{-- Sidebar --}}
-        <div class="gm-admin-form-sidebar">
-            <div style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); position: sticky; top: calc(var(--header-h) + var(--s-4));">
-                <h3 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0 0 var(--s-4); padding-bottom: var(--s-3); border-bottom: 1px solid var(--c-line);">Order Summary</h3>
-
-                <div style="display: flex; flex-direction: column; gap: var(--s-3); margin-bottom: var(--s-4);">
-                    <div style="display: flex; justify-content: space-between; color: var(--c-ink-700);">
-                        <span>Subtotal</span>
-                        <span id="summary-subtotal" style="font-weight: 500; font-family: var(--f-display);">{{ $currencySymbol }} 0.00</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; color: var(--c-ink-700);">
-                        <span>Discount</span>
-                        <span id="summary-discount" style="font-weight: 500; font-family: var(--f-display); color: var(--c-success);">-{{ $currencySymbol }} 0.00</span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; color: var(--c-ink-700);">
-                        <span>Shipping</span>
-                        <span id="summary-shipping" style="font-weight: 500; font-family: var(--f-display);">{{ $currencySymbol }} 0.00</span>
-                    </div>
-                </div>
-
-                <div style="border-top: 2px solid var(--c-line); padding-top: var(--s-3);">
-                    <div style="display: flex; justify-content: space-between; font-size: var(--t-lg); font-weight: 600; font-family: var(--f-display); color: var(--c-ink-900);">
-                        <span>Total</span>
-                        <span id="summary-total" style="font-family: var(--f-display);">{{ $currencySymbol }} 0.00</span>
-                    </div>
-                </div>
-
-                <hr style="margin: var(--s-4) 0; border-color: var(--c-line);">
-
-                <h3 style="font-size: var(--t-sm); font-weight: 600; color: var(--c-ink-900); margin: 0 0 var(--s-3); text-transform: uppercase; letter-spacing: var(--ls-wide);">Payment & Shipping</h3>
-
-                <x-admin.form-row
-                    :fields="[
-                        ['key' => 'payment_method', 'label' => 'Payment Method', 'type' => 'select', 'required' => true, 'options' => [['value' => 'cash', 'label' => 'Cash on Delivery'], ['value' => 'bkash', 'label' => 'bKash'], ['value' => 'card', 'label' => 'Card/Online']]],
-                        ['key' => 'courier_id', 'label' => 'Courier', 'type' => 'select', 'options' => \$couriers->pluck('name', 'id')->prepend(['', 'Select Courier'])->toArray()],
-                    ]"
-                />
-
-                <x-admin.form-row
-                    :fields="[
-                        ['key' => 'assign_user_id', 'label' => 'Assigned To', 'type' => 'select', 'options' => \$assignUsers->pluck('name', 'id')->prepend(['', 'Unassigned'])->toArray()],
-                    ]"
-                    :columns="1"
-                />
-
-                <x-admin.form-row
-                    :fields="[
-                        ['key' => 'notes', 'label' => 'Admin Notes', 'type' => 'textarea', 'rows' => 3, 'placeholder' => 'Internal notes...'],
-                    ]"
-                    :columns="1"
-                />
-            </div>
+            <h4 class="page-title">Order Create</h4>
         </div>
     </div>
-</form>
+</div>   
+<!-- end page title --> 
 
-@push('scripts')
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const form = document.querySelector('.gm-admin-form');
-        if (!form) return;
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" action="{{ route('admin.orders.store')}}" id="ajax_form">
+                    @csrf
+                    <div class="row">
+                        <div class="col-lg-12 row">
+                            
+                            <div class="col-md-4">
+                                <label class="form-label">Pick a Date</label>
+                                <input type="date" class="form-control" required name="date" />
+                            </div>
+                            <div class="col-md-4 d-none">
+                                <label for="validationDefault02" class="form-label">Invoice Number</label>
+                                <input type="text" class="form-control" id="validationDefault02"  name="invoice_no" />
+                            </div>                            
+                            <div class="col-md-4">
+                                <label  class="form-label">Order Status</label>
+                                <select class="form-control" name="status">
+                                   @foreach($status as $key=>$s)
+                                   <option value="{{$key}}"> {{ $s}} </option>
+                                   @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <div class="clearfix"></div>
 
-        let isDirty = false;
-        const inputs = form.querySelectorAll('input, textarea, select');
-        inputs.forEach(input => {
-            input.addEventListener('change', () => { isDirty = true; });
-            input.addEventListener('input', () => { isDirty = true; });
-        });
+                        <div class="col-lg-12 mt-3">
+                            <div class="row height d-flex justify-content-center align-items-center">
 
-        form.addEventListener('submit', function(e) {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('gm-btn--loading');
-            }
-        });
+                                <div class="col-md-8">
+                                    <div class="search">
+                                        <input type="text" id="search" class="form-control" placeholder="product search here">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
 
-        // Product select handler
-        document.addEventListener('change', function(e) {
-            if (e.target.matches('.product-select')) {
-                const select = e.target;
-                const option = select.options[select.selectedIndex];
-                const row = select.closest('.order-item-row');
-                
-                if (option.value) {
-                    const price = option.dataset.price;
-                    const stock = option.dataset.stock;
-                    const sku = option.dataset.sku;
-                    
-                    row.querySelector('input[name$="[price]"]').value = parseFloat(price).toFixed(2);
-                    row.querySelector('input[name$="[quantity]"]').max = stock;
-                    row.querySelector('input[name$="[size]"]').value = ''; // Will be filled from variation
-                    row.querySelector('input[name$="[color]"]').value = ''; // Will be filled from variation
-                    updateSubtotal(row);
-                    updateSummary();
-                } else {
-                    row.querySelector('input[name$="[price]"]').value = '';
-                    row.querySelector('input[name$="[quantity]"]').value = '1';
-                    row.querySelector('input[name$="[size]"]').value = '';
-                    row.querySelector('input[name$="[color]"]').value = '';
-                    updateSubtotal(row);
-                    updateSummary();
+                        <div class="col-lg-12 mt-3">
+                            <table class="table table-centered table-nowrap mb-0" id="product_table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Image</th>
+                                        <th>Product</th>
+                                        <th>Weight</th>
+                                        <th>Size</th>
+                                        <th>Color</th>
+                                        <th style="width: 120px;">Quantity</th>
+                                        <th style="width: 150px;">Sell Price</th>
+                                        <th style="width: 150px;">Discount</th>
+                                        <th>Subtotal</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="data">
+                                   
+                                </tbody>
+                            </table>
+                        </div>
+
+
+                        <div class="col-lg-12 row mt-3">
+                            <div class="col-md-3">
+                                <label  class="form-label"> Courier  </label>
+                                <select class="form-control" name="courier_id">
+                                    <option value="" data-charge="0">Select One</option>
+                                    @foreach($couriers as $courier)
+                                    <option value="{{ $courier->id }}"> {{ $courier->name }} </option>
+                                    @endforeach
+                                </select>
+                            </div> 
+                            
+                            <div class="col-md-3">
+                                <label  class="form-label"> Customer First Name</label>
+                                <input type="text" class="form-control"  name="first_name"  />
+                            </div> 
+
+                            <div class="col-md-3">
+                                <label  class="form-label"> Customer Last Name</label>
+                                <input type="text" class="form-control" name="last_name" />
+                            </div> 
+
+
+                            <div class="col-md-3">
+                                <label  class="form-label"> Customer Mobile</label>
+                                <input type="text" class="form-control" name="mobile" />
+                            </div> 
+
+                            <div class="col-md-6">
+                                <label  class="form-label"> Customer Address</label>
+                                <textarea rows="3" name="shipping_address" class="form-control"></textarea>
+                            </div>
+							<div class="row for_redx d-none">
+                             <h5 class="text-danger mt-3">These fields only for Redx Courier Service</h5>
+                             <div class="col-md-3">
+                                <label  class="form-label">Choose Area</label>
+                             	<select class="form-control select2" id="area_select">
+                                  <option value="">Select One</option>
+          
+                                </select> 
+                            </div>                            
+                            <div class="col-md-3">
+                                  <label  class="form-label">Area ID</label>
+                                  <input type="text" readonly class="form-control" id="area_id" name="area_id" value=""/>
+                            </div>                          
+                            <div class="col-md-3">
+                                  <label  class="form-label">Area Name</label>
+                                  <input type="text" readonly class="form-control" id="area_name" name="area_name" value=""/>
+                            </div>
+                          </div>                           
+                          <div class="row for_pathao d-none">
+                            <h5 class="text-danger mt-3">These fields only for Pathao Courier Service</h5>                              
+                            <div class="col-md-3">
+                                <label  class="form-label">Choose City</label>
+                             	<select class="form-control select2" id="city_select" name="city">
+                                  <option value="">Select One</option>
+                                  @foreach($cities as $key=>$city)
+                                  <option value="{{ $city['city_id'] }}">{{ $city['city_name'] }}</option>
+                                  @endforeach
+                                </select> 
+                            </div>                           
+                            <div class="col-md-3">
+                                <label  class="form-label">Choose Zone</label>
+                             	<select class="form-control select2" id="zone_select" name="state">
+                                  <option value="">Select One</option>
+                                </select> 
+                            </div>                         
+                            <div class="col-md-3">
+                                <label  class="form-label">Choose Area</label>
+                             	<select class="form-control select2" name="area_id">
+                                  <option value="">Select One</option>
+                                </select> 
+                            </div>                                                     
+                            <div class="col-md-3">
+                                  <label  class="form-label">Item Weight</label>
+                                  <input type="number" class="form-control" id="weight" step="0.5" min="0.5" max="10" name="weight" value="0.5"/>
+                            </div>
+                          </div>
+                        </div>
+
+
+                        <div class="col-lg-12 row mt-3">
+                            
+                            <div class="col-md-3">
+                                <label  class="form-label"> Delivery Charge </label>
+                                <select class="form-control" name="delivery_charge_id" id="delevery_charge">
+                                    <option value="" data-charge="0">Select One</option>
+                                    @foreach($charges as $charge)
+                                    <option value="{{ $charge->id }}" data-charge="{{ $charge->amount }}"> {{ $charge->title }} </option>
+                                    @endforeach
+                                </select>
+                            </div> 
+
+                            <div class="col-md-3">
+                                <label  class="form-label"> Discount</label>
+                                <input type="text" class="form-control" name="discount" id="discount_amount" />
+                            </div> 
+
+                            <div class="col-md-3">
+                                <label  class="form-label">Total</label>
+                                <input type="text" class="form-control"  name="final_amount" id="purchase_total" />
+
+                                <input type="hidden" value="0" name="shipping_charge" id="shipping_charge" />
+                            </div> 
+                        </div>
+
+
+                        <div class="col-12 mt-2 p-1">
+                            <label  class="form-label"> Note</label>
+                            <textarea class="form-control" name="note" placeholder="note"></textarea>
+                        </div>
+
+
+
+                        <div class="col-12 mt-2">
+                            <button class="btn btn-success" type="submit">Save</button>
+                        </div>
+                    </div>
+
+                </form>
+       
+            </div> <!-- end card-body-->
+        </div> <!-- end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+@endsection 
+
+@push('js')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+<script type="text/javascript">
+    var path = "{{ route('admin.getOrderProduct') }}";
+    const products=[];
+    
+    $( "#search" ).autocomplete({
+        selectFirst: true, //here
+        minLength: 2,
+        source: function( request, response ) {
+          $.ajax({
+            url: path,
+            type: 'GET',
+            dataType: "json",
+            data: {
+               search: request.term
+            },
+            success: function( data ) {
+                if (data.length ==0) {
+                    toastr.error('Product Or Stock Not Found');
+                }
+                else if (data.length ==1) {
+                    if(products.indexOf(data[0].id) ==-1){
+                        productEntry(data[0]);
+                        products.push(data[0].id);
+                    }
+                    $('#search').val('');
+                }else if (data.length >1) {
+                    response(data);
                 }
             }
-        });
-
-        // Quantity/price change
-        document.addEventListener('input', function(e) {
-            if (e.target.matches('input[name$="[quantity]"], input[name$="[price]"], input[name$="[discount]"]')) {
-                const row = e.target.closest('.order-item-row');
-                updateSubtotal(row);
-                updateSummary();
+          });
+        },
+        select: function (event, ui) {
+           if(products.indexOf(ui.item.id) ==-1){
+                productEntry(ui.item);
+                products.push(ui.item.id);
             }
-        });
-
-        // Add item
-        document.getElementById('add-item-btn')?.addEventListener('click', function() {
-            const container = document.getElementById('order-items');
-            const index = container.querySelectorAll('.order-item-row').length;
-            
-            const row = document.createElement('div');
-            row.className = 'order-item-row';
-            row.style.cssText = 'display: grid; grid-template-columns: 60px 1fr 80px 100px 100px 80px 80px 60px; gap: var(--s-2); align-items: center; padding: var(--s-3); background: var(--c-bg-2); border-radius: var(--r-md);';
-            
-            const productOptions = Array.from(document.querySelector('.product-select').options).map(opt => 
-                opt.value ? `<option value="${opt.value}" data-price="${opt.dataset.price}" data-stock="${opt.dataset.stock}" data-sku="${opt.dataset.sku}">${opt.text}</option>` : opt.outerHTML
-            ).join('');
-
-            row.innerHTML = `
-                <div style="width: 60px; height: 60px; border-radius: var(--r-md); background: var(--c-bg); display: flex; align-items: center; justify-content: center;">
-                    <x-ui.skeleton variant="box" style="width: 100%; height: 100%;" />
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <select name="items[${index}][product_id]" class="gm-input gm-input--sm product-select" required>
-                        ${productOptions}
-                    </select>
-                    <input type="hidden" name="items[${index}][variation_id]" class="variation-id-input">
-                </div>
-                <input type="text" name="items[${index}][size]" class="gm-input gm-input--sm" placeholder="Size" readonly style="background: var(--c-bg-2);">
-                <input type="text" name="items[${index}][color]" class="gm-input gm-input--sm" placeholder="Color" readonly style="background: var(--c-bg-2);">
-                <input type="number" name="items[${index}][quantity]" class="gm-input gm-input--sm" value="1" min="1" max="99" style="width: 80px;">
-                <input type="number" name="items[${index}][price]" class="gm-input gm-input--sm" step="0.01" min="0" placeholder="0.00" style="width: 100px;">
-                <input type="number" name="items[${index}][discount]" class="gm-input gm-input--sm" step="0.01" min="0" value="0" placeholder="0.00" style="width: 80px;">
-                <div style="font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900);" class="subtotal-display">0.00</div>
-                <button type="button" class="gm-btn gm-btn--ghost gm-btn--sm gm-btn--danger remove-item" style="width: 36px; height: 36px; padding: 0;">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                </button>
-            `;
-            container.appendChild(row);
-        });
-
-        // Remove item
-        document.addEventListener('click', function(e) {
-            if (e.target.matches('.remove-item, .remove-item *')) {
-                const btn = e.target.closest('.remove-item');
-                const row = btn.closest('.order-item-row');
-                row.remove();
-                updateSummary();
-            }
-        });
-
-        function updateSubtotal(row) {
-            const qty = parseFloat(row.querySelector('input[name$="[quantity]"]').value) || 0;
-            const price = parseFloat(row.querySelector('input[name$="[price]"]').value) || 0;
-            const discount = parseFloat(row.querySelector('input[name$="[discount]"]').value) || 0;
-            const subtotal = (qty * price) - discount;
-            row.querySelector('.subtotal-display').textContent = subtotal.toFixed(2);
+           $('#search').val('');
+           return false;
         }
+      });
 
-        function updateSummary() {
-            let subtotal = 0;
-            let totalDiscount = 0;
-            
-            document.querySelectorAll('.order-item-row').forEach(row => {
-                const qty = parseFloat(row.querySelector('input[name$="[quantity]"]').value) || 0;
-                const price = parseFloat(row.querySelector('input[name$="[price]"]').value) || 0;
-                const discount = parseFloat(row.querySelector('input[name$="[discount]"]').value) || 0;
-                
-                subtotal += qty * price;
-                totalDiscount += discount;
-            });
-            
-            const shipping = 0; // Calculate based on courier
-            const total = subtotal - totalDiscount + shipping;
-            
-            document.getElementById('summary-subtotal')?.textContent = '{{ $currencySymbol }} ' + subtotal.toFixed(2);
-            document.getElementById('summary-discount')?.textContent = '-{{ $currencySymbol }} ' + totalDiscount.toFixed(2);
-            document.getElementById('summary-shipping')?.textContent = '{{ $currencySymbol }} ' + shipping.toFixed(2);
-            document.getElementById('summary-total')?.textContent = '{{ $currencySymbol }} ' + total.toFixed(2);
-        }
+    function productEntry(item){
 
-        // Form submit
-        const form = document.querySelector('.gm-admin-form');
-        form?.addEventListener('submit', function(e) {
-            const submitBtn = form.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                submitBtn.classList.add('gm-btn--loading');
+
+        $.ajax({
+            url: '{{ route("admin.orderProductEntry")}}',
+            type: 'GET',
+            dataType: "json",
+            data: {id:item.id},
+            success: function( res ) {
+                if (res.html) {
+                    $('tbody#data').append(res.html);
+                    calculateSum();
+                }
             }
-        });
+          });
+    }
 
-        // Go back handler
-        window.goBack = function() {
-            if (confirm('You have unsaved changes. Leave anyway?')) {
-                window.history.back();
-            }
-        };
+    $(document).on('click',".remove",function(e) {
+        var whichtr = $(this).closest("tr");
+        whichtr.remove();  
+        calculateSum();    
     });
+
+    $(document).on('blur change',".quantity",function(e) {
+        let current_stock=Number($(this).val());
+        let stock=Number($(this).data('qty'));
+
+        if (current_stock>stock) {
+            toastr.error('Product Stock Not Available');
+            $(this).val(stock);
+            calculateSum();
+            return false;
+        }
+    });
+
+
+
+    $(document).on('blur',".quantity, .unit_price, .unit_discount",function(e) {
+        calculateSum();    
+    });
+
+    $(document).on('change',"#delevery_charge",function(e) {
+        calculateSum();    
+    });
+
+    $(document).on('change', 'select[name="courier_id"]', function(e){
+    	let courier_id = $(this).val();
+    	if(courier_id == 1)
+        {
+          	$(document).find('div.for_redx').removeClass('d-none');
+          	$(document).find('div.for_pathao').addClass('d-none');
+        }    	
+    	
+    	else if(courier_id == 2)
+        {
+          	$(document).find('div.for_pathao').removeClass('d-none');
+          	$(document).find('div.for_redx').addClass('d-none');
+        }
+    
+    	else {
+            $(document).find('div.for_pathao').addClass('d-none');
+          	$(document).find('div.for_redx').addClass('d-none');
+        }
+  });
+  
+  $(document).on('change', '#city_select', function(e){
+    let city = $(this).val();
+    var url = "{{ route('admin.zonesByCity', ":city") }}";
+	url = url.replace(':city', city);
+    $.ajax({
+        url,
+        type: 'GET',
+        dataType: "json",
+        success: function(res){
+          if(res.success)
+          {
+            let html = "<option value=''>Select One</option>";
+            for(let i = 0; i < res.zones.length; i++)
+            {
+               html += "<option value='"+res.zones[i].zone_id+"' >"+res.zones[i].zone_name+"</option>";
+            }
+            
+            $('#zone_select').html(html);
+            
+          }
+        }
+      
+    });
+    
+  });
+  
+   $(document).on('change', '#zone_select', function(e){
+    let zone = $(this).val();
+    var url = "{{ route('admin.areasByZone', ":zone") }}";
+	url = url.replace(':zone', zone);
+    $.ajax({
+        url,
+        type: 'GET',
+        dataType: "json",
+        success: function(res){
+          if(res.success)
+          {
+            let html = "<option value=''>Select One</option>";
+            for(let j = 0; j < res.areas.length; j++)
+            {
+               html += "<option value='"+res.areas[j].area_id+"' >"+res.areas[j].area_name+"</option>";
+            }
+            
+            $('select[name="area_id"]').html(html);
+            
+          }
+        }
+      
+    });
+    
+  });
+  
+    function calculateSum() {
+
+        let tblrows = $("#product_table tbody tr");
+        let sub_total=0;
+        let row_discount=0;
+        let charge=Number($("#delevery_charge option:selected").data('charge'));
+        tblrows.each(function (index) {
+            let tblrow = $(this);
+            let qty=Number(tblrow.find('td input.quantity').val());
+            let amount=Number(tblrow.find('td input.unit_price').val());
+            let discount=Number(tblrow.find('td input.unit_discount').val());
+            let row_total=Number(qty *amount);
+            row_discount+=Number(qty *discount);
+            tblrow.find('td.row_total').text(row_total.toFixed(2));
+            sub_total+=row_total;
+        });
+        sub_total+=charge;
+
+        $('input#purchase_total').val(sub_total.toFixed(2));
+        $('input#discount_amount').val(row_discount.toFixed(2));
+        $('input#shipping_charge').val(charge.toFixed(2));
+    }
+
+  
 </script>
+
 @endpush

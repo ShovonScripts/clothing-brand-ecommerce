@@ -1,210 +1,189 @@
 @extends('backend.app')
-
 @section('content')
-@php
-$currencySymbol = config('app.currency_symbol') ?? '৳';
-$items = $items ?? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 30);
-$searchQuery = request('q', '');
-$selectedCategory = request('category_id');
-$selectedBrand = request('brand_id');
-$selectedStatus = request('status');
-@endphp
 
-<div class="gm-admin-page">
-    {{-- Page Header --}}
-    <x-admin.page-header
-        title="Products"
-        subtitle="Manage your product catalog"
-        :count="$items->total()"
-    >
-        <x-slot name="breadcrumb">
-            <x-admin.page-header-breadcrumb :items="[
-                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
-                ['label' => 'Products'],
-            ]" />
-        </x-slot>
+<style>
+ th, td, h4, .pr_list, .form-label {
+  	color: black !important;
+  }
+</style>
 
-        <x-slot name="actions">
-            @can('product.create')
-                <x-ui.button variant="primary" size="sm" href="{{ route('admin.products.create') }}">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Add Product
-                </x-ui.button>
-            @endcan
-            <a href="{{ route('admin.productExport') }}" class="gm-btn gm-btn--ghost gm-btn--sm">Export</a>
-        </x-slot>
-    </x-admin.page-header>
-
-    {{-- Filter Bar --}}
-    <x-admin.filter-bar
-        :filters="[
-            'category_id' => [
-                'label' => 'Category',
-                'type' => 'select',
-                'options' => \$categories->map(fn(\$c) => ['value' => \$c->id, 'label' => \$c->name])->prepend(['value' => '', 'label' => 'All Categories'])->toArray(),
-            ],
-            'brand_id' => [
-                'label' => 'Brand',
-                'type' => 'select',
-                'options' => \$brands->map(fn(\$b) => ['value' => \$b->id, 'label' => \$b->name])->prepend(['value' => '', 'label' => 'All Brands'])->toArray(),
-            ],
-            'status' => [
-                'label' => 'Status',
-                'type' => 'select',
-                'options' => [
-                    ['value' => '', 'label' => 'All Status'],
-                    ['value' => 'active', 'label' => 'Active'],
-                    ['value' => 'inactive', 'label' => 'Inactive'],
-                    ['value' => 'draft', 'label' => 'Draft'],
-                ],
-            ],
-        ]"
-        :search="$searchQuery"
-        searchPlaceholder="Search products..."
-        :onFilterChange="true"
-    />
-
-    {{-- Product Table --}}
-    <div class="gm-admin-table-wrapper" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden;">
-        @if($items->count())
-            <x-admin.table
-                :columns="[
-                    ['key' => 'actions', 'label' => 'Action', 'align' => 'center', 'width' => '70px', 'render' => 'renderActions'],
-                    ['key' => 'checkbox', 'label' => '', 'align' => 'center', 'width' => '40px', 'render' => 'renderCheckbox'],
-                    ['key' => 'image', 'label' => 'Image', 'align' => 'center', 'width' => '80px', 'render' => 'renderImage'],
-                    ['key' => 'name', 'label' => 'Product', 'align' => 'left', 'render' => 'renderName'],
-                    ['key' => 'sku', 'label' => 'SKU', 'align' => 'left'],
-                    ['key' => 'type', 'label' => 'Type', 'align' => 'center', 'render' => 'renderType'],
-                    ['key' => 'category', 'label' => 'Category', 'align' => 'left'],
-                    ['key' => 'brand', 'label' => 'Brand', 'align' => 'left'],
-                    ['key' => 'purchase_price', 'label' => 'Cost', 'align' => 'right', 'render' => 'renderCost'],
-                    ['key' => 'sell_price', 'label' => 'Price', 'align' => 'right', 'render' => 'renderPrice'],
-                    ['key' => 'stock', 'label' => 'Stock', 'align' => 'center', 'render' => 'renderStock'],
-                    ['key' => 'recommended', 'label' => 'Recommended', 'align' => 'center', 'render' => 'renderRecommended'],
-                ]"
-                :rows="$items"
-                :actions="[
-                    ['type' => 'view', 'label' => 'View', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M1 12s4-8 11-8 11 8 11-8\"></path><circle cx=\"12\" cy=\"12\" r=\"3\"></circle></svg>', 'url' => fn(\$row) => route('admin.products.show', \$row->id)],
-                    ['type' => 'edit', 'label' => 'Edit', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"></path><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"></path></svg>', 'url' => fn(\$row) => route('admin.products.edit', \$row->id)],
-                    ['type' => 'delete', 'label' => 'Delete', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>', 'url' => fn(\$row) => route('admin.products.destroy', \$row->id), 'attrs' => ['onclick' => 'return confirm(\"Are you sure?\")', 'class' => 'gm-admin-table__action-btn--delete']],
-                ]"
-                :emptyMessage="No products found"
-                striped
-                hover
-            />
-        @else
-            <x-ui.empty-state
-                type="search"
-                title="No products found"
-                message="Get started by adding your first product."
-                action="Add Product"
-                :actionUrl="route('admin.products.create')"
-            />
-        @endif
-    </div>
-
-    {{-- Pagination --}}
-    @if($items->count())
-        <div class="gm-pagination-wrapper" style="margin-top: var(--s-5);">
-            <x-ui.pagination
-                :currentPage="$items->currentPage()"
-                :lastPage="$items->lastPage()"
-                :total="$items->total()"
-                :perPage="$items->perPage()"
-                :onPageChange="true"
-            />
+<div class="row">
+    <div class="col-12">
+        <div class="page-title-box">
+            <div class="page-title-right">
+                <ol class="breadcrumb m-0">
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">SIS</a></li>
+                    <li class="breadcrumb-item"><a href="javascript: void(0);">CRM</a></li>
+                    <li class="breadcrumb-item active pr_list">Product List</li>
+                </ol>
+            </div>
+            <h4 class="page-title">Product List</h4>
         </div>
-    @endif
-</div>
+    </div>
+</div>   
+<!-- end page title --> 
 
-@push('scripts')
+<div class="row">
+    <div class="col-12 p-1">
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-2">
+                    
+                    <div class="col-md-4">
+                    
+                        <div class="#" style=" ">
+                            <a class=" btn btn-sm btn-info recomm_update" href="{{ route('admin.recommendedUpdate')}}?is_recommended=1" style=" margin-right: 10px;margin-bottom: 10px; ">
+                              Active (Recomm)
+                          </a>
+                            <a class=" btn btn-sm btn-danger recomm_update" href="{{ route('admin.recommendedUpdate')}}?is_recommended=0" style=" margin-bottom: 10px; ">
+                              De-active (Recomm)
+                          </a>
+                        </div>
+                    </div>
+                  
+                    <div class="col-md-5" style="  ">
+                        <form class="row align-items-center">
+                            <div style="width:60%;margin-top: 0px;">
+                                <label for="inputPassword2" class="visually-hidden">Search</label>
+                                <input type="search" class="form-control" id="inputPassword2" placeholder="Search..." name="q" value="{{ $q??''}}">
+                            </div>
+                            
+                            <div class="col-auto" style="margin-top: 0px;" >
+                                <label for="submit" class="visually-hidden">Submit</label>
+                                <input type="submit" class="form-control btn btn-sm btn-primary" id="submit" value="Submit">
+                                
+                            </div>
+                        </form>
+                        
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-xl-end mt-xl-0 mt-2" style="  ">
+                        @can('product.create')
+                            <a href="{{ route('admin.products.create')}}" class="btn btn-danger mb-2 me-2"><i class="mdi mdi-basket me-1"></i> Add Product</a>
+                        @endcan
+                        <a type="button" href="{{ route('admin.productExport')}}" class="btn btn-light mb-2" style="color: black;">Export</a>
+                        </div>
+                    </div><!-- end col-->
+                </div>
+
+                <div class="col-md-12 col-sm-12 p-1">
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width:7%">Action</th>
+                                <th>
+                                    
+                                    <div class="form-check">
+                                      <label class="form-check-label">
+                                        <input type="checkbox" class="form-check-input check_all" value="">
+                                      </label>
+                                    </div>
+                                </th>
+                                <th style="width:12%">Product</th>
+                              	<th style="width:8%">Sku</th>
+                                <th>Image</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Brand</th>
+                                <th>Purchase Price</th>
+                                <th>Sell Price</th>
+                                <th>Stock</th>
+                              	<th>Recommended</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($items as $item)
+                            <tr>
+                              <td>
+                                  	<a href="{{ route('admin.productCopy',[$item->id])}}" class="action-icon">copy</a>
+                                    <a href="{{ route('admin.products.show',[$item->id])}}" class="action-icon"> <i class="mdi mdi-details"></i></a>
+                                    @can('product.edit')
+                                    <a href="{{ route('admin.products.edit',[$item->id])}}" class="action-icon"> <i class="mdi mdi-square-edit-outline"></i></a>
+                                    @endcan
+                                    @can('product.delete')
+                                    <a href="{{ route('admin.products.destroy',[$item->id])}}" class="delete action-icon"> <i class="mdi mdi-delete"></i></a>
+                                    @endcan
+                                </td>
+                                <td>
+                                    <input type="checkbox" class="checkbox" value="{{ $item->id}}">
+                                    
+                                </td>
+                                <td> {{$item->name}}</td>
+                              	<td> {{$item->sku}}</td>
+                                <td>
+                        
+                                    <div class="flex-shrink-0">
+                                        <img src="{{ getImage('products',$item->image)}}" class="rounded-circle avatar-xs" alt="friend">
+                                    </div>
+                                        
+                                </td>
+                                <td> {{$item->type}}</td>
+                                <td>{{ $item->category?$item->category->name:''}}</td>
+                                <td>{{ $item->brand?$item->brand->name:''}}</td>
+                                <td>{{$item->purchase_price}}</td>
+                                <td>{{$item->sell_price}}</td>
+                                <td>{{ $item->stocks->sum('quantity')}}</td>
+                              
+                              	<td> {{$item->is_recommended=='1'?'yes':'no'}} </td>
+                                
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p>{!! urldecode(str_replace("/?","?",$items->appends(Request::all())->render())) !!}</p>
+                </div>
+            </div> <!-- end card-body-->
+        </div> <!-- end card-->
+    </div> <!-- end col -->
+</div> <!-- end row -->
+@endsection 
+@push('js')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Search form submission
-        const searchForm = document.querySelector('form[action*="products"]');
-        if (searchForm) {
-            searchForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const formData = new FormData(this);
-                const params = new URLSearchParams();
-                for (const [key, value] of formData.entries()) {
-                    if (value) params.set(key, value);
-                }
-                window.location.href = '{{ route("admin.products.index") }}?' + params.toString();
-            });
-        }
 
-        // Filter change handler
-        document.addEventListener('filter-change', function(e) {
-            const params = new URLSearchParams(window.location.search);
-            const key = e.detail.key;
-            const value = e.detail.value;
-            
-            if (key === 'search') {
-                if (value) params.set('q', value);
-                else params.delete('q');
-            } else {
-                if (value) params.set(key, value);
-                else params.delete(key);
-            }
-            params.set('page', '1');
-            window.location.href = '{{ route("admin.products.index") }}?' + params.toString();
-        });
-
-        // Clear filters
-        document.addEventListener('clear-filters', function() {
-            window.location.href = '{{ route("admin.products.index") }}';
-        });
-
-        // Pagination
-        document.addEventListener('page-change', function(e) {
-            const params = new URLSearchParams(window.location.search);
-            params.set('page', e.detail.page);
-            window.location.href = '{{ route("admin.products.index") }}?' + params.toString();
-        });
-
-        // Checkbox handling
-        document.addEventListener('change', function(e) {
-            if (e.target.matches('.check_all')) {
-                const checkboxes = document.querySelectorAll('input[name="ids[]"]');
-                checkboxes.forEach(cb => cb.checked = e.target.checked);
-            }
-        });
-
-        // Bulk actions
-        document.addEventListener('bulk-action', function(e) {
-            const action = e.detail.action;
-            const ids = Array.from(document.querySelectorAll('input[name="ids[]"]:checked')).map(cb => cb.value);
-            
-            if (!ids.length) {
-                if (window.toastr) toastr.warning('No items selected');
-                return;
-            }
-            
-            if (action === 'delete') {
-                if (!confirm('Delete selected items?')) return;
-            }
-            
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-            ids.forEach(id => formData.append('ids[]', id));
-            
-            const url = action === 'delete' 
-                ? '{{ route("admin.products.bulkDelete") }}'
-                : '{{ route("admin.products.bulkUpdate") }}';
-            formData.append('action', action);
-            
-            fetch(url, { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    if (window.toastr) toastr.success(data.msg);
-                    window.location.reload();
-                } else {
-                    if (window.toastr) toastr.error(data.msg || 'Failed');
-                }
-            });
-        });
+$(document).ready(function(){
+    
+    $(".check_all").on('change',function(){
+      $(".checkbox").prop('checked',$(this).is(":checked"));
     });
+    
+    
+    $(document).on('click', 'a.recomm_update', function(e){
+        e.preventDefault();
+        var url = $(this).attr('href');
+    
+        var product = $('input.checkbox:checked').map(function(){
+          return $(this).val();
+        });
+        var product_ids=product.get();
+        
+        if(product_ids.length ==0){
+            toastr.error('Please Select A Product First !');
+            return ;
+        }
+        
+        $.ajax({
+           type:'GET',
+           url:url,
+           data:{product_ids},
+           success:function(res){
+               if(res.status==true){
+                toastr.success(res.msg);
+                window.location.reload();
+                
+            }else if(res.status==false){
+                toastr.error(res.msg);
+            }
+           }
+        });
+    
+    });
+    
+    
+})
+    
+    
 </script>
 @endpush
