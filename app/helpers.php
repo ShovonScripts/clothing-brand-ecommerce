@@ -9,6 +9,27 @@ function dateFormate($date = null)
     return $value;
 }
 
+/**
+ * Generate a unique invoice number
+ * Format: INV-YYYYMMDD-XXXXXXXX (timestamp + random)
+ */
+function generateInvoiceNo(): string
+{
+    $prefix = 'INV';
+    $datePart = date('Ymd');
+    $randomPart = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+    
+    $invoiceNo = "{$prefix}-{$datePart}-{$randomPart}";
+    
+    // Ensure uniqueness (extremely unlikely collision, but check anyway)
+    while (\App\Models\Order::where('invoice_no', $invoiceNo)->exists()) {
+        $randomPart = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+        $invoiceNo = "{$prefix}-{$datePart}-{$randomPart}";
+    }
+    
+    return $invoiceNo;
+}
+
 function getImage($folder = null, $value = null)
 {
     $url = asset('images/no_found.png');

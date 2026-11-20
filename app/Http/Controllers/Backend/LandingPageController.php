@@ -232,8 +232,7 @@ class LandingPageController extends Controller
         // Order Assign Among Users End
 
 
-        //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+        $data['invoice_no']=generateInvoiceNo();
         $data['discount']= $product['discount'];
         $data['amount']= $product['sell_price'];
         $data['shipping_charge']= $charge;

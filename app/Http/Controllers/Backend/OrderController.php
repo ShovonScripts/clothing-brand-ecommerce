@@ -173,8 +173,7 @@ class OrderController extends Controller
 
         $data['amount']=$data['final_amount']+$data['shipping_charge']+$data['discount'];
         $data['user_id']=auth()->user()->id;
-        //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+        $data['invoice_no']=generateInvoiceNo();
         
          DB::beginTransaction();
 
