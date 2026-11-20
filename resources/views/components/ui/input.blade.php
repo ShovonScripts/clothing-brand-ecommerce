@@ -28,7 +28,8 @@ if ($icon) {
 }
 ?>
 
-<div {{ $attributes->merge(['class' => implode(' ', $wrapperClasses)]) }}>
+{{-- Attributes belong on the <input> below; the wrapper only gets its class. --}}
+<div class="{{ implode(' ', $wrapperClasses) }} {{ $attributes->get('class') }}">
     @if($label)
         <label for="{{ $inputId }}" class="gm-label">{{ $label }} @if($required)<span class="gm-label__required" aria-hidden="true">*</span>@endif</label>
     @endif
