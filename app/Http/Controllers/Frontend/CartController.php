@@ -40,6 +40,7 @@ class CartController extends Controller
         $data=$request->validate([
             'product_id' => 'required|numeric',
             'variation_id' => 'required|numeric',
+            'quantity' => 'required|integer|min:1|max:999',
         ]);
         
         $segm='home';
@@ -54,7 +55,9 @@ class CartController extends Controller
         $data=getProductInfo($product);
         $cart = session()->get('cart', []);
         
-        if($request->is_stock != 0) {
+        // ORD-02: Always check stock from product, not client-sent is_stock
+        $isStock = (bool)$product->is_stock;
+        if($isStock) {
         	$stock=$this->util->checkProductStock($product_id, $variation_id);
         if($stock < $quantity){
             return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
@@ -98,40 +101,36 @@ class CartController extends Controller
         return response()->json(['success'=>true,'msg'=>'Product added to cart successfully!','html'=>$view,'item'=>$total_item]);
     }
     
-    public function store(Request $request){
+public function store(Request $request){
         $data=$request->validate([
             'product_id' => 'required|numeric',
             'variation_id' => 'required|numeric',
+            'quantity' => 'required|integer|min:1|max:999',
         ]);
-      
+       
         $segm='home';
         if(request()->segment){
             $segm=request()->segment;
         }
         $product_id=$request->product_id;
         $variation_id=$request->variation_id;
-        if($request->quantity == null || $request->quantity == '')
-        {
-            $quantity= "1";
-        } else {
-            $quantity= $request->quantity;
-        }
+        $quantity= $request->quantity;
         $product = Product::findOrFail($product_id);
         $variation=Variation::find($variation_id);
         $data=getProductInfo($product);
         $cart = session()->get('cart', []);
-      
-      
-        // if($request->is_stock != 0) {
-        // 	$stock=$this->util->checkProductStock($product_id, $variation_id);
-        // if($stock < $quantity){
-        //     return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
-        // }	
-        // } 
-        
-        
-
-  
+       
+       
+        // ORD-02: Always check stock from product, not client-sent is_stock
+        $isStock = (bool)$product->is_stock;
+        if($isStock) {
+            $stock=$this->util->checkProductStock($product_id, $variation_id);
+            if($stock < $quantity){
+                return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
+            }	
+        } 
+       
+       
         if(isset($cart[$variation_id])) {
           
           	$new_stock=$cart[$variation_id]['quantity']+1;       
@@ -170,19 +169,23 @@ class CartController extends Controller
 
     }
 
-    public function edit(Request $request,$id)
+public function edit(Request $request,$id)
     {
         if($id){
+            $request->validate([
+                'quantity' => 'required|integer|min:0|max:999',
+            ]);
+            
             $qty=$request->quantity;
-          	
-          	$cart = session()->get('cart');
-          	$segm = request()->segment(1) ?: 'home';
-          
-          	if($qty==0){
-            	if(isset($cart[$id])) {
+           	
+           	$cart = session()->get('cart');
+           	$segm = request()->segment(1) ?: 'home';
+           
+           	if($qty==0){
+             	if(isset($cart[$id])) {
                     unset($cart[$id]);
                 }
-          	}else{
+           	}else{
                 if(!isset($cart[$id])){
                     return response()->json(['success'=>false,'msg'=>' Cart item not found !']);
                 }
@@ -190,11 +193,11 @@ class CartController extends Controller
                	$is_stock=$cart[$id]["is_stock"];
               	$stock=$this->util->checkProductStock($product_id, $id);
               	if($is_stock == 1 && $stock <$qty){
-                  	return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
+                   	return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
               	}
-              	
-              	$cart[$id]["quantity"] = $qty;
-              
+               	
+               	$cart[$id]["quantity"] = $qty;
+               
             }
            
             session()->put('cart', $cart);

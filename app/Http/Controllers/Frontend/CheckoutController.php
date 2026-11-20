@@ -138,8 +138,7 @@ class CheckoutController extends Controller
         // Order Assign Among Users End
 
 
-        //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+        $data['invoice_no']=generateInvoiceNo();
         $data['discount']= $total_discount_val;
         $data['shipping_charge']= $charge;
         $data['amount'] = ($unit_price + $product['discount']) * $proQty;
@@ -250,26 +249,89 @@ class CheckoutController extends Controller
         }
     }
 
-    public function store(Request $request){
+public function store(Request $request){
         $data=$request->validate([
             'mobile' => 'digits_between:11,11',
             'first_name' => 'required',            
             'payment_method' => 'required',
             'shipping_address' => 'required',  
-          	'ip_address' => 'required',
+            'ip_address' => 'required',
             'note' => '',
-          	'delivery_charge_id' => 'required|numeric',          
+            'delivery_charge_id' => 'required|numeric',          
         ]);
+
+        // ORD-01/02/03/04: Validate cart quantities and stock before order
+        $cart = session()->get('cart', []);
+        if (empty($cart)) {
+            return response()->json(['success' => false, 'msg' => 'Cart is empty']);
+        }
+
+        $hasNonFreeShipping = false;
+        foreach ($cart as $item) {
+            // Validate quantity (cast to int since session may store as string)
+            $qty = (int)($item['quantity'] ?? 0);
+            if (!$qty || $qty < 1) {
+                return response()->json(['success' => false, 'msg' => 'Invalid quantity in cart']);
+            }
+            
+            // Check stock
+            $isStock = (bool)($item['is_stock'] ?? 0);
+            if ($isStock) {
+                $stock = $this->util->checkProductStock($item['product_id'], $item['variation_id']);
+                if ($stock < $qty) {
+                    return response()->json(['success' => false, 'msg' => "Insufficient stock for {$item['name']}"]);
+                }
+            }
+
+            // Check if item needs delivery charge
+            if (empty($item['is_free_shipping'])) {
+                $hasNonFreeShipping = true;
+            }
+        }
+
+        // ORD-04: Delivery charge required for non-free-shipping carts
+        $deliveryCharge = DeliveryCharge::find($data['delivery_charge_id']);
+        if ($hasNonFreeShipping && (!$deliveryCharge || !$deliveryCharge->status)) {
+            return response()->json(['success' => false, 'msg' => 'Valid delivery charge is required']);
+        }
+        // Allow delivery_charge_id = 0 only if all items are free shipping
+        if (!$hasNonFreeShipping && $data['delivery_charge_id'] != 0) {
+            $data['delivery_charge_id'] = 0;
+        }
       
         if(empty(auth()->user()->id)){
-        	$user = User::create([
-              'first_name' => $request->first_name,
-              'mobile' => $request->mobile,
-              'shipping_address' => $request->shipping_address,
-              'note' => $request->note
-            ]);
-          $data['user_id']=$user->id;
-          
+            // ORD-07: Find or create user by mobile to avoid duplicate accounts
+            $mobile = $request->mobile;
+            $user = User::where('mobile', $mobile)->first();
+            
+            if (!$user) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'mobile' => $mobile,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            } else {
+                // Update existing user's info
+                $user->update([
+                    'first_name' => $request->first_name,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            }
+            
+            // Don't link to existing staff/admin accounts
+            if ($user->hasAnyRole(['admin', 'worker', 'vendor'])) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'mobile' => $mobile,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            }
+            
+            $data['user_id'] = $user->id;
+            
         } else {
         	$data['user_id']=auth()->user()->id;
         }
@@ -325,12 +387,48 @@ class CheckoutController extends Controller
         
         
         //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+$couponId = session('coupon_id');
+        $coupon = $couponId ? CouponCode::find($couponId) : null;
+
+        // ORD-05: Re-validate coupon before order creation
+        if ($coupon) {
+            $subtotal = $total;
+            if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
+                $coupon = null;
+                $coupn_discount = 0;
+            } elseif ($coupon->usage_limit_per_user && auth()->check()) {
+                $userUsage = CouponUsage::where('coupon_code_id', $coupon->id)
+                    ->where('user_id', auth()->id())
+                    ->count();
+                if ($userUsage >= $coupon->usage_limit_per_user) {
+                    $coupon = null;
+                    $coupn_discount = 0;
+                }
+            } elseif ($coupon->minimum_amount && $subtotal < $coupon->minimum_amount) {
+                $coupon = null;
+                $coupn_discount = 0;
+            } elseif ($coupon->start && $coupon->start > now()->toDateString()) {
+                $coupon = null;
+                $coupn_discount = 0;
+            } elseif ($coupon->end && $coupon->end < now()->toDateString()) {
+                $coupon = null;
+                $coupn_discount = 0;
+            }
+            
+            // Cap discount at subtotal (prevent negative total)
+            if ($coupon && $coupon->discount_type === 'fixed') {
+                $coupn_discount = min($coupon->amount, $subtotal);
+            }
+        } else {
+            $coupn_discount = 0;
+        }
+
+        $data['invoice_no']=generateInvoiceNo();
         $data['discount']=$total_discount+$coupn_discount;
         $data['amount']=$total_discount+$total;
         $data['shipping_charge']=$charge;
-      	$data['final_amount']=$total + $charge-$coupn_discount;		
-      	
+        $data['final_amount']=$total + $charge-$coupn_discount;		
+       
         DB::beginTransaction();
         try {
 
@@ -338,18 +436,34 @@ class CheckoutController extends Controller
             $order=Order::create($data);
             session()->put('placed_order_id', $order->id);
 
+            // Track coupon usage
+            if ($coupon) {
+                CouponUsage::create([
+                    'coupon_code_id' => $coupon->id,
+                    'user_id' => auth()->id(),
+                    'order_id' => $order->id,
+                ]);
+                $coupon->increment('used_count');
+            }
+
             if (!empty($product)) {    
               
-                // foreach ($product as $key => $item) {                  
-                //   if($item['is_stock'] != 0) {
-                //   		$stock=$this->util->checkProductStock($item['product_id'], $item['variation_id']);
-                //         if($stock < $item['quantity']){
-                //             return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
-                //         }
-                //     	$this->util->decreaseProductStock($item['product_id'], $item['variation_id'],$item['quantity']);
-                //   }                 
-                  
-                // }             
+                foreach ($product as $key => $item) {                  
+                    $isStock = (bool)($item['is_stock'] ?? 0);
+                    if ($isStock) {
+                        $stockItem = \App\Models\ProductStock::where([
+                            'product_id' => $item['product_id'],
+                            'variation_id' => $item['variation_id'],
+                        ])->lockForUpdate()->first();
+                        
+                        if (!$stockItem || $stockItem->quantity < $item['quantity']) {
+                            return response()->json(['success' => false, 'msg' => "Insufficient stock for product ID {$item['product_id']}"]);
+                        }
+                        
+                        $stockItem->quantity -= $item['quantity'];
+                        $stockItem->save();
+                    }                 
+                }             
               
 			  $order->details()->createMany($product);
         
@@ -507,8 +621,7 @@ class CheckoutController extends Controller
         // Order Assign Among Users End
 
 
-        //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+        $data['invoice_no']=generateInvoiceNo();
         $data['discount']= $product['discount'];
         $data['amount']= $product['sell_price'];
         $data['shipping_charge']= $charge;
@@ -618,20 +731,79 @@ class CheckoutController extends Controller
   
     public function StoreChk(Request $request){
 
-      $this->validate($request, [
+      $data = $request->validate([
     		'first_name' => 'required',
             'mobile' => 'required',
             'shipping_address' => 'required',
-           'delivery_charge_id' => 'required'
+           'delivery_charge_id' => 'required|numeric',
       ]);
+
+        // ORD-01/02/03/04: Validate cart quantities and stock before order
+        $cart = session()->get('cart', []);
+        if (empty($cart)) {
+            return response()->json(['success' => false, 'msg' => 'Cart is empty']);
+        }
+
+        $hasNonFreeShipping = false;
+        foreach ($cart as $item) {
+            $qty = (int)($item['quantity'] ?? 0);
+            if (!$qty || $qty < 1) {
+                return response()->json(['success' => false, 'msg' => 'Invalid quantity in cart']);
+            }
+            
+            $isStock = (bool)($item['is_stock'] ?? 0);
+            if ($isStock) {
+                $stock = $this->util->checkProductStock($item['product_id'], $item['variation_id']);
+                if ($stock < $qty) {
+                    return response()->json(['success' => false, 'msg' => "Insufficient stock for {$item['name']}"]);
+                }
+            }
+
+            if (empty($item['is_free_shipping'])) {
+                $hasNonFreeShipping = true;
+            }
+        }
+
+        // ORD-04: Delivery charge required for non-free-shipping carts
+        $deliveryCharge = DeliveryCharge::find($data['delivery_charge_id']);
+        if ($hasNonFreeShipping && (!$deliveryCharge || !$deliveryCharge->status)) {
+            return response()->json(['success' => false, 'msg' => 'Valid delivery charge is required']);
+        }
+        if (!$hasNonFreeShipping && $data['delivery_charge_id'] != 0) {
+            $data['delivery_charge_id'] = 0;
+        }
       
-       $user = User::create([
-            'first_name' => $request->input('firstname'),
-            'last_name' => $request->input('lastname'),
-            'email' => $request->input('email'),
-            'mobile' => $request->input('mobile'),            
-            'note' => $request->input('note'),
-        ]);
+       // ORD-07: Find or create user by mobile
+        $mobile = $request->input('mobile');
+        $user = User::where('mobile', $mobile)->first();
+        
+        if (!$user) {
+            $user = User::create([
+                'first_name' => $request->input('firstname'),
+                'last_name' => $request->input('lastname'),
+                'email' => $request->input('email'),
+                'mobile' => $mobile,
+                'note' => $request->input('note'),
+            ]);
+        } else {
+            $user->update([
+                'first_name' => $request->input('firstname'),
+                'last_name' => $request->input('lastname'),
+                'email' => $request->input('email'),
+                'note' => $request->input('note'),
+            ]);
+        }
+        
+        // Don't link to existing staff/admin accounts
+        if ($user->hasAnyRole(['admin', 'worker', 'vendor'])) {
+            $user = User::create([
+                'first_name' => $request->input('firstname'),
+                'last_name' => $request->input('lastname'),
+                'email' => $request->input('email'),
+                'mobile' => $mobile,
+                'note' => $request->input('note'),
+            ]);
+        }
 
 
         $carts=session()->get('cart',[]);
@@ -692,17 +864,21 @@ class CheckoutController extends Controller
                 
                 
   
-                  foreach ($product as $key => $item) {
-                      $stock=$this->util->checkProductStock($item['product_id'], $item['variation_id']);
-                    
-                      if($stock <$item['quantity']){                        
-                          return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
-                      }
-                    
-                      $this->util->decreaseProductStock($item['product_id'], $item['variation_id'],$item['quantity']);
-                    
-                  }
-                  $order->details()->createMany($product);
+foreach ($product as $key => $item) {
+                       $stockItem = \App\Models\ProductStock::where([
+                           'product_id' => $item['product_id'],
+                           'variation_id' => $item['variation_id'],
+                       ])->lockForUpdate()->first();
+                       
+                       if (!$stockItem || $stockItem->quantity < $item['quantity']) {
+                           return response()->json(['success' => false, 'msg' => "Insufficient stock for product ID {$item['product_id']}"]);
+                       }
+                       
+                       $stockItem->quantity -= $item['quantity'];
+                       $stockItem->save();
+                     
+                   }
+                   $order->details()->createMany($product);
               }
               $this->modulutil->orderPayment($order, $request->all());
               $this->modulutil->orderstatus($order);
@@ -765,8 +941,24 @@ class CheckoutController extends Controller
                     ->whereDate('end','>=', date('Y-m-d'))->first();
         
         if($item){
+            // ORD-05: Check usage limits
+            if ($item->usage_limit && $item->used_count >= $item->usage_limit) {
+                return response()->json(['success'=>false,'msg'=>'Coupon usage limit reached']);
+            }
+            
+            // Check per-user limit
+            if ($item->usage_limit_per_user && auth()->check()) {
+                $userUsage = \App\Models\CouponUsage::where('coupon_code_id', $item->id)
+                    ->where('user_id', auth()->id())
+                    ->count();
+                if ($userUsage >= $item->usage_limit_per_user) {
+                    return response()->json(['success'=>false,'msg'=>'You have reached the usage limit for this coupon']);
+                }
+            }
+            
             session()->put('coupon_discount', $item->amount);
             session()->put('discount_type', $item->discount_type);
+            session()->put('coupon_id', $item->id);
             return response()->json(['success'=>true,'msg'=>'You Got Coupon Discount!']);
         }else{
             return response()->json(['success'=>false,'msg'=>'Not Found Any Coupon Discount!']);

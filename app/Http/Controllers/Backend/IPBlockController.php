@@ -7,6 +7,12 @@ use Illuminate\Http\Request;
 use App\Models\BlockedIp;
 class IPBlockController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:ipblock.view')->only(['index']);
+        $this->middleware('permission:ipblock.manage')->only(['IPBlockSubmit', 'delete', 'edit', 'update']);
+    }
+
     public function index(){
       $AllIp = BlockedIp::all();
         return view('backend.reports.ipblock.ipblock', compact('AllIp'));

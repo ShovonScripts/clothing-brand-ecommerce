@@ -51,7 +51,10 @@ class UserAccountDetailsController extends Controller
      */
     public function show($id)
     {
-        //
+        if ($id != auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+        return $this->index();
     }
 
     /**
@@ -62,7 +65,10 @@ class UserAccountDetailsController extends Controller
      */
     public function edit($id)
     {
-        //
+        if ($id != auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+        return $this->index();
     }
 
     /**
@@ -74,13 +80,18 @@ class UserAccountDetailsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user=User::find($id);
+        // SEC-06: Users can only update their own profile
+        if ($id != auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
 
-        $data=$request->validate([
-            'mobile' => 'nullable|numeric',
+        $user = auth()->user();
+
+        $data = $request->validate([
+            'mobile' => 'nullable|numeric|digits:11|regex:/(01)[0-9]{9}/|unique:users,mobile,'.$user->id,
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'nullable|email|unique:users,email,'.$id,
+            'email' => 'nullable|email|unique:users,email,'.$user->id,
         ]);
 
         
@@ -126,6 +137,10 @@ class UserAccountDetailsController extends Controller
      */
     public function destroy($id)
     {
-        //
+        if ($id != auth()->id()) {
+            abort(403, 'Unauthorized');
+        }
+        // Users cannot delete their own account via this route
+        abort(403, 'Account deletion not allowed');
     }
 }

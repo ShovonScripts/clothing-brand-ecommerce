@@ -16,6 +16,11 @@ use App\Models\Order;
 
 class LandingPageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:landing.view')->only(['index', 'landing_page']);
+        $this->middleware('permission:landing.manage')->only(['create', 'store', 'edit', 'update', 'destroy', 'delete_slider', 'storeData']);
+    }
 
     public function index()
     {
@@ -227,8 +232,7 @@ class LandingPageController extends Controller
         // Order Assign Among Users End
 
 
-        //$data['invoice_no']=time();
-        $data['invoice_no']=rand(111111,999999);
+        $data['invoice_no']=generateInvoiceNo();
         $data['discount']= $product['discount'];
         $data['amount']= $product['sell_price'];
         $data['shipping_charge']= $charge;

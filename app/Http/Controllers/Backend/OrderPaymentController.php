@@ -15,7 +15,7 @@ class OrderPaymentController extends Controller
     public $util;
 
     public function __construct(ModulUtil $modulutil, Util $util){
-
+        $this->middleware('permission:payment.manage');
         $this->util=$util;
         $this->modulutil=$modulutil;
     }

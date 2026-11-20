@@ -298,6 +298,23 @@ composer audit
 - confirmation পেজে মালিকানা যাচাই (`canViewOrder`)
 - XAMPP-এ `.env`, dump, `.git`, `storage/logs` HTTP দিয়ে পড়া যায় না; `public/`-এ কোনো webshell নেই; কাস্টমারের দেওয়া ডেটা কাঁচা অবস্থায় রেন্ডার হয় না; request ইনপুট থেকে raw SQL নেই; CSRF-এর কোনো ব্যতিক্রম নেই
 
+**অতিরিক্ত ঠিক করা হয়েছে (এই সেশনে):**
+- **SEC-01** Public seller registration removed → vendor role removed from admin access
+- **SEC-02** Missing admin permission checks → 10 new permissions + middleware on 7 controllers
+- **SEC-03** File upload RCE → `UploadService` with MIME validation, UUID names, content verification, .htaccess in 17 dirs
+- **SEC-04** Settings script fields → guarded by `settings.scripts` permission (admin only)
+- **SEC-06** User profile IDOR → `$id` must equal `auth()->id()` in `UserAccountDetailsController`
+- **SEC-07** Staff OTP login bypass → frontend OTP rejects admin/worker/vendor roles
+- **SEC-08** Rate limiting → throttle on login/register/OTP/contact/newsletter/password; OTP send 1/min, 5/hour per phone+IP; max 5 verify attempts
+- **SEC-09** GET→POST/DELETE for 20 state-changing routes + validation
+- **ORD-01** Negative quantity → `quantity|integer|min:1|max:999` validation everywhere
+- **ORD-02** Client `is_stock` trust → always use `$product->is_stock` from DB
+- **ORD-03** Stock decrease on order → `lockForUpdate()` decrement in transaction
+- **ORD-04** Delivery charge bypass → requires active `DeliveryCharge` for non-free carts
+- **ORD-05** Coupon logic → store coupon_id, usage limits, per-user tracking, re-validate at order, cap discount at subtotal
+- **ORD-06** Invoice uniqueness → unique index + `generateInvoiceNo()` (INV-YYYYMMDD-XXXXXXXX)
+- **ORD-07** Guest duplicate users → find-or-create by mobile; avoid staff accounts
+
 ---
 
 ## মালিকের সিদ্ধান্ত (কাজ শুরুর আগে উত্তর দিন)
