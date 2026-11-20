@@ -4,21 +4,21 @@
 
 @section('content')
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="{{ route('front.home') }}">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Terms & conditions</li>
-            </ul>
-        </div>
-    </div>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Terms & Conditions'],
+        ]"
+    />
 
-    <section class="gm-page">
-        <div class="container-fluid">
-            <div class="gm-page-narrow gm-prose">
+    <x-ui.section size="lg">
+        <div class="gm-container">
+            <div class="gm-page__header">
                 <span class="gm-eyebrow">Legal</span>
-                <h1>Terms & conditions</h1>
+                <h1 class="gm-page__title">Terms & Conditions</h1>
+            </div>
+
+            <div class="gm-prose gm-prose--narrow">
                 @if($page && $page->body)
                     {!! $page->body !!}
                 @else
@@ -44,6 +44,6 @@
                 @endif
             </div>
         </div>
-    </section>
+    </x-ui.section>
 </main>
 @endsection

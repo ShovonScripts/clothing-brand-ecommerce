@@ -1,34 +1,60 @@
 @extends('frontend.app')
-@section('content')
 
-<div class="main-wrapper container-fluid">
-  <div class="main-wrapper">
-    <link rel="stylesheet" href="frontend/css/career.css">
-    <section>
-        <div class="career-banner" style="background-image: url({{ getImage('career','0906_hp_lux_takeover_c06_img1666696656.jpg')}});">
-            <h2 class="title"> Career Page</h2>
-        </div>
-    </section>
-    <br><br>
-    <section>
-        <div class="container mt-5">
-            <div class="career mb-5">
+@section('title', 'Careers — GENTRY')
+
+@section('content')
+@php
+$info = \App\Models\Information::first();
+$items = $items ?? collect();
+@endphp
+<main class="main-wrapper">
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Careers'],
+        ]"
+    />
+
+    <x-ui.section size="lg">
+        <div class="gm-container">
+            <div class="gm-page__header">
+                <span class="gm-eyebrow">Join us</span>
+                <h1 class="gm-page__title">Careers at GENTRY</h1>
+                <p class="gm-page__subtitle">We're a small team building something lasting. If you care about craft, detail and doing things properly, we'd like to hear from you.</p>
+            </div>
+
+            <div class="gm-career-grid">
                 @foreach($items as $item)
-                <div class="row career-row mb-5">
-                    <div class="col-lg-5 col-md-5 col-12 m-auto career-item">
-                        <img src="{{ getImage('career',$item->image)}}" alt="" width="500">
-                    </div>
-                    <div class="col-lg-7 col-md-7 col-12 m-auto ps-5 align-items-start career-item">
-                        <h2 class="text-cap mb-5">
-                            {{$item->title}}
-                        </h2>
-                        <p>{{$item->description}}</p>
-                    </div>
-                </div>
+                    <article class="gm-career-card">
+                        <div class="gm-career-media">
+                            @if($item->image)
+                                <img src="{{ getImage('career', $item->image) }}" alt="{{ $item->title }}" loading="lazy">
+                            @else
+                                <div class="gm-skeleton gm-skeleton--box" aria-hidden="true"></div>
+                            @endif
+                        </div>
+                        <div class="gm-career-content">
+                            <h2 class="gm-career-title">{{ $item->title }}</h2>
+                            <div class="gm-career-description gm-prose" style="font-size: var(--t-md); max-width: none;">
+                                {!! $item->description !!}
+                            </div>
+                        </div>
+                    </article>
                 @endforeach
+
+                @if($items->isEmpty())
+                    <div class="gm-empty-state gm-empty-state--default" style="grid-column: 1 / -1;">
+                        <x-ui.empty-state
+                            type="default"
+                            title="No open positions"
+                            message="We're not currently hiring, but we're always interested in meeting talented people. Check back soon or send us your portfolio."
+                            action="Contact Us"
+                            :actionUrl="route('front.contactUs')"
+                        />
+                    </div>
+                @endif
             </div>
         </div>
-        <br><br>
-    </section>
-  </div>
-  @endsection
+    </x-ui.section>
+</main>
+@endsection

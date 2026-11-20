@@ -4,23 +4,22 @@
 
 @section('content')
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="{{ route('front.home') }}">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Returns & exchanges</li>
-            </ul>
-        </div>
-    </div>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Returns & Exchanges'],
+        ]"
+    />
 
-    <section class="gm-page">
-        <div class="container-fluid">
-            <div class="gm-page-narrow gm-prose">
+    <x-ui.section size="lg">
+        <div class="gm-container">
+            <div class="gm-page__header">
                 <span class="gm-eyebrow">Client services</span>
-                <h1>Returns & exchanges</h1>
-                <p>We want you to love what you wear. If something isn't right, you have 14 days from delivery to return or exchange it.</p>
+                <h1 class="gm-page__title">Returns & Exchanges</h1>
+                <p class="gm-page__subtitle">We want you to love what you wear. If something isn't right, you have 14 days from delivery to return or exchange it.</p>
+            </div>
 
+            <div class="gm-prose gm-prose--narrow">
                 <h2>Eligibility</h2>
                 <ul>
                     <li>Items must be unworn, unwashed and in their original condition.</li>
@@ -44,9 +43,9 @@
                 <h2>Faulty items</h2>
                 <p>If a garment arrives damaged or develops a fault, contact us within 7 days with photos. We will repair, replace or refund it at no cost to you.</p>
 
-                <p style="margin-top:2.5em;color:#6f6a63"><em>Need help? Email <a href="mailto:{{ optional(\App\Models\Information::first())->owner_email }}">{{ optional(\App\Models\Information::first())->owner_email }}</a>.</em></p>
+                <p style="margin-top: 2.5em; color: var(--c-ink-500);"><em>Need help? Email <a href="mailto:{{ optional(\App\Models\Information::first())->owner_email }}">{{ optional(\App\Models\Information::first())->owner_email }}</a>.</em></p>
             </div>
         </div>
-    </section>
+    </x-ui.section>
 </main>
 @endsection

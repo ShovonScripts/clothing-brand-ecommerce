@@ -3,107 +3,97 @@
 @section('title', 'FAQ — GENTRY')
 
 @section('content')
+@php
+$info = \App\Models\Information::first();
+$currencySymbol = match($info->currency) {
+    'BDT' => '৳',
+    'Dollar' => '$',
+    'Euro' => '€',
+    'Rupee' => '₹',
+    default => ''
+};
+@endphp
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="{{ route('front.home') }}">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">FAQ</li>
-            </ul>
-        </div>
-    </div>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'FAQ'],
+        ]"
+    />
 
-    <section class="gm-page">
-        <div class="container-fluid">
-            <div class="gm-section-head gm-section-head--center" style="margin-bottom:40px">
+    <x-ui.section size="lg">
+        <div class="gm-container">
+            <div class="gm-page__header">
                 <span class="gm-eyebrow">Good to know</span>
-                <h1 class="gm-title">Frequently asked questions</h1>
-                <p class="gm-subtitle">Everything you need to know about ordering, fit, delivery and returns.</p>
+                <h1 class="gm-page__title">Frequently Asked Questions</h1>
+                <p class="gm-page__subtitle">Everything you need to know about ordering, fit, delivery and returns.</p>
             </div>
 
-            <div class="gm-faq">
-                <div class="accordion" id="gmFaq">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqOne">
-                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" aria-expanded="true" aria-controls="faq1">
-                                How do I choose the right size?
-                            </button>
-                        </h2>
-                        <div id="faq1" class="accordion-collapse collapse show" aria-labelledby="faqOne" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                Each product page includes a size guide with chest, waist and length measurements. If you are between sizes, we recommend sizing up for a relaxed fit or staying true to size for a tailored fit. Our client services team is happy to advise — just send us your usual size and the piece you're considering.
-                            </div>
-                        </div>
-                    </div>
+            <div class="gm-faq" style="max-width: 800px; margin: 0 auto;">
+                <x-ui.accordion allowMultiple>
+                    <x-ui.accordion-item open>
+                        <x-slot name="trigger">How do I choose the right size?</x-slot>
+                        <x-slot name="content">
+                            <p>Each product page includes a size guide with chest, waist and length measurements. If you are between sizes, we recommend sizing up for a relaxed fit or staying true to size for a tailored fit. Our client services team is happy to advise — just send us your usual size and the piece you're considering.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
 
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqTwo">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" aria-expanded="false" aria-controls="faq2">
-                                When will my order arrive?
-                            </button>
-                        </h2>
-                        <div id="faq2" class="accordion-collapse collapse" aria-labelledby="faqTwo" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                Orders placed before 3pm are dispatched the same business day. Delivery within the city typically takes 1–2 business days, and 2–4 business days elsewhere. You will receive a tracking link by SMS as soon as your order leaves our studio.
-                            </div>
-                        </div>
-                    </div>
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">When will my order arrive?</x-slot>
+                        <x-slot name="content">
+                            <p>Orders placed before 3pm are dispatched the same business day. Delivery within the city typically takes 1–2 business days, and 2–4 business days elsewhere. You will receive a tracking link by SMS as soon as your order leaves our studio.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
 
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqThree">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" aria-expanded="false" aria-controls="faq3">
-                                What is your returns policy?
-                            </button>
-                        </h2>
-                        <div id="faq3" class="accordion-collapse collapse" aria-labelledby="faqThree" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                You may return unworn, unwashed items with original tags within 14 days of delivery for an exchange or refund. Sale items are eligible for exchange or store credit. To start a return, contact client services with your order number and we will arrange a pickup.
-                            </div>
-                        </div>
-                    </div>
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">What is your returns policy?</x-slot>
+                        <x-slot name="content">
+                            <p>You may return unworn, unwashed items with original tags within 14 days of delivery for an exchange or refund. Sale items are eligible for exchange or store credit. To start a return, contact client services with your order number and we will arrange a pickup.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
 
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqFour">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" aria-expanded="false" aria-controls="faq4">
-                                Do you offer free delivery?
-                            </button>
-                        </h2>
-                        <div id="faq4" class="accordion-collapse collapse" aria-labelledby="faqFour" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                Yes. Delivery is complimentary on orders over ৳5,000. Below that, a flat delivery fee applies and is shown at checkout before you confirm your order.
-                            </div>
-                        </div>
-                    </div>
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">Do you offer free delivery?</x-slot>
+                        <x-slot name="content">
+                            <p>Yes. Delivery is complimentary on orders over {{ $currencySymbol ?? '৳' }}5,000. Below that, a flat delivery fee applies and is shown at checkout before you confirm your order.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
 
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqFive">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" aria-expanded="false" aria-controls="faq5">
-                                Which payment methods do you accept?
-                            </button>
-                        </h2>
-                        <div id="faq5" class="accordion-collapse collapse" aria-labelledby="faqFive" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                We accept cash on delivery, bKash and major cards. All online payments are processed over an encrypted connection. You can choose your preferred method at checkout.
-                            </div>
-                        </div>
-                    </div>
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">Which payment methods do you accept?</x-slot>
+                        <x-slot name="content">
+                            <p>We accept cash on delivery, bKash and major cards. All online payments are processed over an encrypted connection. You can choose your preferred method at checkout.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
 
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" id="faqSix">
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" aria-expanded="false" aria-controls="faq6">
-                                How should I care for my garments?
-                            </button>
-                        </h2>
-                        <div id="faq6" class="accordion-collapse collapse" aria-labelledby="faqSix" data-bs-parent="#gmFaq">
-                            <div class="accordion-body">
-                                Wash at a low temperature, inside out, and line dry where possible. Tailoring should be dry cleaned sparingly. Knitwear should be folded rather than hung. Care instructions are printed on the inside label of every piece.
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">How should I care for my garments?</x-slot>
+                        <x-slot name="content">
+                            <p>Wash at a low temperature, inside out, and line dry where possible. Tailoring should be dry cleaned sparingly. Knitwear should be folded rather than hung. Care instructions are printed on the inside label of every piece.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
+
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">Can I modify or cancel my order?</x-slot>
+                        <x-slot name="content">
+                            <p>If your order hasn't shipped yet, contact us immediately and we'll do our best to update or cancel it. Once dispatched, changes cannot be made — you'll need to follow our returns process instead.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
+
+                    <x-ui.accordion-item>
+                        <x-slot name="trigger">Do you ship internationally?</x-slot>
+                        <x-slot name="content">
+                            <p>Currently we deliver within Bangladesh only. We're working on international shipping — sign up for our newsletter to be the first to know when it launches.</p>
+                        </x-slot>
+                    </x-ui.accordion-item>
+                </x-ui.accordion>
+            </div>
+
+            <div style="margin-top: var(--s-8); text-align: center;">
+                <p style="color: var(--c-ink-500); margin: 0 0 var(--s-4);">Still have questions?</p>
+                <x-ui.button variant="ghost" size="md" href="{{ route('front.contactUs') }}">Contact Client Services</x-ui.button>
             </div>
         </div>
-    </section>
+    </x-ui.section>
 </main>
 @endsection

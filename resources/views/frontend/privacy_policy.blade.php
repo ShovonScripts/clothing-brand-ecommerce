@@ -4,23 +4,22 @@
 
 @section('content')
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="{{ route('front.home') }}">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Privacy policy</li>
-            </ul>
-        </div>
-    </div>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Privacy Policy'],
+        ]"
+    />
 
-    <section class="gm-page">
-        <div class="container-fluid">
-            <div class="gm-page-narrow gm-prose">
+    <x-ui.section size="lg">
+        <div class="gm-container">
+            <div class="gm-page__header">
                 <span class="gm-eyebrow">Legal</span>
-                <h1>Privacy policy</h1>
-                <p>Your privacy matters to us. This policy explains what information we collect, why we collect it, and how we keep it safe.</p>
+                <h1 class="gm-page__title">Privacy Policy</h1>
+                <p class="gm-page__subtitle">Your privacy matters to us. This policy explains what information we collect, why we collect it, and how we keep it safe.</p>
+            </div>
 
+            <div class="gm-prose gm-prose--narrow">
                 <h2>What we collect</h2>
                 <p>When you place an order or create an account, we collect your name, phone number, email address and delivery address. We also collect basic technical information such as your browser type and the pages you visit, so we can improve the store.</p>
 
@@ -41,9 +40,9 @@
                 <h2>Security</h2>
                 <p>We use industry-standard safeguards to protect your information. No method of transmission over the internet is completely secure, but we work continuously to protect your data.</p>
 
-                <p style="margin-top:2.5em;color:#6f6a63"><em>Last updated: {{ now()->format('F Y') }}</em></p>
+                <p style="margin-top: 2.5em; color: var(--c-ink-500);"><em>Last updated: {{ now()->format('F Y') }}</em></p>
             </div>
         </div>
-    </section>
+    </x-ui.section>
 </main>
 @endsection
