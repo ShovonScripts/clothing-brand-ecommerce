@@ -4,441 +4,222 @@
 
 @section('content')
 @php
-use App\Models\Information;
-use App\Models\BanglaText;
-$info = Information::first();
-$bangla_text = BanglaText::first();
-$coupon_visibility = $info->coupon_visibility;
+    // Frontend\CheckoutController@index passes $cart (session cart, keyed by variation id)
+    // and $charges (delivery areas). The form posts to CheckoutController@store, which
+    // charges:  Σ(price × qty) + delivery charge − coupon.  Line "price" is already the
+    // reduced price, so product discounts must NOT be subtracted again here.
+    // Field names below are the ones that controller validates — do not rename them.
+    $info = \App\Models\Information::first();
+    $bangla_text = \App\Models\BanglaText::first();
 
-$cart = session()->get('cart', []);
-$subtotal = 0;
-$discount = 0;
-foreach($cart as $item) {
-    $subtotal += $item['price'] * $item['quantity'];
-    $discount += ($item['discount'] ?? 0) * $item['quantity'];
-}
+    $cart = $cart ?? session('cart', []);
+    $charges = $charges ?? collect();
 
-$charges = $charges ?? collect();
-$hasNonFreeShipping = false;
-foreach($cart as $item) {
-    if (empty($item['is_free_shipping'])) {
-        $hasNonFreeShipping = true;
-        break;
+    $subtotal = 0;
+    $savings = 0;
+    $needsDelivery = false;
+    foreach ($cart as $line) {
+        $subtotal += $line['price'] * $line['quantity'];
+        $savings += ($line['discount'] ?? 0) * $line['quantity'];
+        if (empty($line['is_free_shipping'])) $needsDelivery = true;
     }
-}
 
-$selectedChargeId = old('delivery_charge_id', $hasNonFreeShipping ? $charges->first()?->id : 0);
-$selectedCharge = $charges->firstWhere('id', $selectedChargeId);
-$chargeAmount = $selectedCharge ? $selectedCharge->amount : 0;
+    $selectedChargeId = old('delivery_charge_id', $needsDelivery ? optional($charges->first())->id : 0);
+    $chargeAmount = $needsDelivery ? (float) optional($charges->firstWhere('id', $selectedChargeId))->amount : 0;
+    $couponDiscount = (float) (getCouponDiscount() ?? 0);
+    $total = $subtotal + $chargeAmount - $couponDiscount;
 
-$couponDiscount = getCouponDiscount() ?? 0;
-$total = $subtotal - $discount - $couponDiscount + $chargeAmount;
-$currencySymbol = match($info->currency) {
-    'BDT' => '৳',
-    'Dollar' => '$',
-    'Euro' => '€',
-    'Rupee' => '₹',
-    default => ''
-};
+    $mobileMethods = [
+        'bkash' => ['Bkash', $info->bkash_number ?? null],
+        'rocket' => ['Rocket', $info->rocket_number ?? null],
+        'nogod' => ['Nogod', $info->nogod_number ?? null],
+    ];
+    $oldMethod = old('payment_method', 'cash');
 @endphp
 
 <main class="main-wrapper">
-    <x-ui.breadcrumb
-        :items="[
-            ['label' => 'Home', 'url' => route('front.home')],
-            ['label' => 'Shopping Bag', 'url' => route('front.carts.index')],
-            ['label' => 'Checkout'],
-        ]"
-    />
+    <x-ui.breadcrumb :items="[
+        ['label' => 'Home', 'url' => route('front.home')],
+        ['label' => 'Shopping Bag', 'url' => route('front.carts.index')],
+        ['label' => 'Checkout'],
+    ]" />
 
     <x-ui.section size="md">
-        <div class="gm-checkout-layout" style="display: grid; grid-template-columns: 1fr 420px; gap: var(--s-8); align-items: start;">
+        <div class="gm-checkout-layout">
+            <form method="POST" action="{{ route('front.checkouts.store') }}" id="checkout_form" class="gm-checkout-form" novalidate
+                  data-subtotal="{{ $subtotal }}" data-coupon="{{ $couponDiscount }}"
+                  data-currency="{{ trim(str_replace('0', '', priceFormate(0))) }}">
+                @csrf
+                {{-- Required by the controller. Filled server-side so an order never fails
+                     just because the browser blocks the ipify lookup below. --}}
+                <input type="hidden" name="ip_address" id="ip_address" value="{{ request()->ip() }}">
 
-            {{-- Checkout Form --}}
-            <div class="gm-checkout-form-wrapper">
-                <form method="POST" action="{{ route('front.checkouts.store') }}" id="checkout_form" class="gm-checkout-form" novalidate>
-                    @csrf
+                <section class="gm-checkout-section">
+                    <h2 class="gm-checkout-section__title">{{ $bangla_text->checkout_form_top_text ?? 'Contact information' }}</h2>
 
-                    {{-- Contact Information --}}
-                    <section class="gm-checkout-section" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); margin-bottom: var(--s-5);">
-                        <header style="padding-bottom: var(--s-4); margin-bottom: var(--s-4); border-bottom: 1px solid var(--c-line);">
-                            <h2 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0;">{{ $bangla_text->checkout_form_top_text ?? 'Contact Information' }}</h2>
-                        </header>
+                    <div class="gm-checkout-fields gm-checkout-fields--2">
+                        <x-ui.input name="first_name" :label="$bangla_text->name_text ?? 'Full name'" placeholder="Your full name"
+                                    required autocomplete="name" :error="$errors->first('first_name')" />
+                        <x-ui.input name="mobile" type="tel" :label="$bangla_text->mobile_text ?? 'Mobile number'" placeholder="01XXXXXXXXX"
+                                    required autocomplete="tel" inputmode="numeric" :error="$errors->first('mobile')" />
+                    </div>
 
-                        <div class="gm-form-row gm-form-row--2" style="margin-bottom: var(--s-4);">
-                            <x-ui.input
-                                name="first_name"
-                                label="{{ $bangla_text->name_text ?? 'Full Name' }}"
-                                placeholder="John Doe"
-                                required
-                                :error="$errors->first('first_name')"
-                                wire:model="form.first_name"
-                            />
-                            <x-ui.input
-                                name="mobile"
-                                label="{{ $bangla_text->mobile_text ?? 'Mobile Number' }}"
-                                type="tel"
-                                placeholder="01XXXXXXXXX"
-                                required
-                                :error="$errors->first('mobile')"
-                                wire:model="form.mobile"
-                            />
+                    <x-ui.input name="shipping_address" :label="$bangla_text->address_text ?? 'Delivery address'" placeholder="House, road, area, city"
+                                required autocomplete="street-address" :error="$errors->first('shipping_address')" />
+                </section>
+
+                <section class="gm-checkout-section">
+                    <h2 class="gm-checkout-section__title">Delivery</h2>
+
+                    @if($needsDelivery && $charges->isNotEmpty())
+                        <div class="gm-checkout-options" role="radiogroup" aria-label="Delivery area">
+                            @foreach($charges as $charge)
+                                <label class="gm-checkout-option">
+                                    <input type="radio" name="delivery_charge_id" value="{{ $charge->id }}" data-charge="{{ $charge->amount }}"
+                                           class="gm-checkout-option__input" @checked($charge->id == $selectedChargeId)>
+                                    <span class="gm-checkout-option__body">
+                                        <span class="gm-checkout-option__title">{{ $charge->title }}</span>
+                                    </span>
+                                    <span class="gm-checkout-option__price">{{ priceFormate($charge->amount) }}</span>
+                                </label>
+                            @endforeach
                         </div>
+                    @else
+                        <p class="gm-checkout-note">
+                            {{ $needsDelivery ? 'Delivery charge will be confirmed by our team.' : 'Free delivery on this order.' }}
+                        </p>
+                        <input type="hidden" name="delivery_charge_id" value="0">
+                    @endif
+                </section>
 
-                        <x-ui.input
-                            name="shipping_address"
-                            label="{{ $bangla_text->address_text ?? 'Shipping Address' }}"
-                            placeholder="House/Flat, Road, Area, City"
-                            required
-                            :error="$errors->first('shipping_address')"
-                            wire:model="form.shipping_address"
-                        />
-
-                        <input type="hidden" name="ip_address" id="ip_address" value="">
-                    </section>
-
-                    {{-- Shipping Method --}}
-                    <section class="gm-checkout-section" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); margin-bottom: var(--s-5);">
-                        <header style="padding-bottom: var(--s-4); margin-bottom: var(--s-4); border-bottom: 1px solid var(--c-line);">
-                            <h2 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0;">Delivery Method</h2>
-                        </header>
-
-                        @if($hasNonFreeShipping)
-                            <div class="gm-shipping-options" style="display: flex; flex-direction: column; gap: var(--s-3);">
-                                @foreach($charges as $charge)
-                                    <label class="gm-shipping-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer; transition: all var(--d-fast) var(--e-out);" wire:click="$set('form.delivery_charge_id', {{ $charge->id }})">
-                                        <input type="radio"
-                                            name="delivery_charge_id"
-                                            value="{{ $charge->id }}"
-                                            class="gm-radio__input"
-                                            @if($charge->id == $selectedChargeId) checked @endif
-                                            wire:model="form.delivery_charge_id"
-                                            data-charge="{{ $charge->amount }}"
-                                        >
-                                        <span class="gm-radio__box" aria-hidden="true"></span>
-                                        <div style="flex: 1;">
-                                            <div style="font-weight: 500; color: var(--c-ink-900);">{{ $charge->title }}</div>
-                                            <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $currencySymbol }} {{ number_format($charge->amount, 2) }}</div>
-                                        </div>
-                                        <span style="font-weight: 600; color: var(--c-ink-900); font-family: var(--f-display);">{{ $currencySymbol }} {{ number_format($charge->amount, 2) }}</span>
-                                    </label>
-                                @endforeach
+                @if(($info->coupon_visibility ?? null) == '1')
+                    <section class="gm-checkout-section">
+                        <h2 class="gm-checkout-section__title">Have a coupon?</h2>
+                        @auth
+                            {{-- Applied by public/frontend/js/checkout.js (button#coupon_apply → GET /coupon-discount). --}}
+                            <div class="gm-checkout-coupon">
+                                <x-ui.input id="coupon_code" name="coupon_code" placeholder="Enter coupon code" />
+                                <x-ui.button variant="secondary" id="coupon_apply">Apply</x-ui.button>
                             </div>
                         @else
-                            <div class="gm-alert gm-alert--success" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4);">
-                                <svg class="gm-alert__icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <div>
-                                    <strong>Free Shipping</strong>
-                                    <p style="margin: 0; font-size: var(--t-sm);">Your order qualifies for complimentary delivery.</p>
-                                </div>
-                            </div>
-                            <input type="hidden" name="delivery_charge_id" value="0">
-                        @endif
+                            <p class="gm-checkout-note"><a href="{{ route('login') }}">Sign in</a> to use a coupon code.</p>
+                        @endauth
                     </section>
+                @endif
 
-                    {{-- Coupon --}}
-                    @if($coupon_visibility == '1')
-                        <section class="gm-checkout-section" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); margin-bottom: var(--s-5);">
-                            <header style="padding-bottom: var(--s-4); margin-bottom: var(--s-4); border-bottom: 1px solid var(--c-line);">
-                                <h2 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0; display: flex; align-items: center; gap: var(--s-2);">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="M8 12h8"></path><path d="M12 8v8"></path></svg>
-                                    Have a coupon?
-                                </h2>
-                            </header>
-                            <div class="gm-coupon-form" style="display: flex; gap: var(--s-2); flex-wrap: wrap;">
-                                <x-ui.input
-                                    name="coupon_code"
-                                    placeholder="Enter coupon code"
-                                    wire:model="form.coupon_code"
-                                />
-                                <x-ui.button
-                                    variant="secondary"
-                                    type="button"
-                                    wire:click="applyCoupon"
-                                    :loading="$wire.applyingCoupon"
-                                >
-                                    Apply
-                                </x-ui.button>
-                            </div>
-                            @if($errors->has('coupon_code'))
-                                <p class="gm-error-text" style="margin-top: var(--s-2);">{{ $errors->first('coupon_code') }}</p>
-                            @endif
-                        </section>
-                    @endif
+                <section class="gm-checkout-section">
+                    <h2 class="gm-checkout-section__title">Payment</h2>
 
-                    {{-- Payment Method --}}
-                    <section class="gm-checkout-section" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); padding: var(--s-5); margin-bottom: var(--s-5);">
-                        <header style="padding-bottom: var(--s-4); margin-bottom: var(--s-4); border-bottom: 1px solid var(--c-line);">
-                            <h2 style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); color: var(--c-ink-900); margin: 0;">Payment Method</h2>
-                        </header>
+                    <div class="gm-checkout-options" role="radiogroup" aria-label="Payment method">
+                        <label class="gm-checkout-option">
+                            <input type="radio" name="payment_method" value="cash" class="gm-checkout-option__input" @checked($oldMethod === 'cash')>
+                            <span class="gm-checkout-option__body">
+                                <span class="gm-checkout-option__title">Cash on delivery</span>
+                                <span class="gm-checkout-option__meta">Pay when you receive your order</span>
+                            </span>
+                        </label>
 
-                        <div class="gm-payment-options" style="display: flex; flex-direction: column; gap: var(--s-3);">
-                            @if($info->bkash)
-                                <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'bkash')">
-                                    <input type="radio" name="payment_method" value="bkash" class="gm-radio__input" wire:model="form.payment_method" @if(old('payment_method') == 'bkash') checked @endif>
-                                    <span class="gm-radio__box" aria-hidden="true"></span>
-                                    <div>
-                                        <div style="font-weight: 500; color: var(--c-ink-900);">Bkash</div>
-                                        <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $info->bkash_number }}</div>
-                                    </div>
+                        @foreach($mobileMethods as $value => [$label, $number])
+                            @if($info->{$value} ?? false)
+                                <label class="gm-checkout-option">
+                                    <input type="radio" name="payment_method" value="{{ $value }}" class="gm-checkout-option__input" @checked($oldMethod === $value)>
+                                    <span class="gm-checkout-option__body">
+                                        <span class="gm-checkout-option__title">{{ $label }}</span>
+                                        @if($number)<span class="gm-checkout-option__meta">Send money to {{ $number }}</span>@endif
+                                    </span>
                                 </label>
                             @endif
-
-                            @if($info->rocket)
-                                <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'rocket')">
-                                    <input type="radio" name="payment_method" value="rocket" class="gm-radio__input" wire:model="form.payment_method" @if(old('payment_method') == 'rocket') checked @endif>
-                                    <span class="gm-radio__box" aria-hidden="true"></span>
-                                    <div>
-                                        <div style="font-weight: 500; color: var(--c-ink-900);">Rocket</div>
-                                        <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $info->rocket_number }}</div>
-                                    </div>
-                                </label>
-                            @endif
-
-                            @if($info->nogod)
-                                <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'nogod')">
-                                    <input type="radio" name="payment_method" value="nogod" class="gm-radio__input" wire:model="form.payment_method" @if(old('payment_method') == 'nogod') checked @endif>
-                                    <span class="gm-radio__box" aria-hidden="true"></span>
-                                    <div>
-                                        <div style="font-weight: 500; color: var(--c-ink-900);">Nogod</div>
-                                        <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $info->nogod_number }}</div>
-                                    </div>
-                                </label>
-                            @endif
-
-                            @if($info->paypal)
-                                <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'paypal')">
-                                    <input type="radio" name="payment_method" value="paypal" class="gm-radio__input" wire:model="form.payment_method" @if(old('payment_method') == 'paypal') checked @endif>
-                                    <span class="gm-radio__box" aria-hidden="true"></span>
-                                    <div>
-                                        <div style="font-weight: 500; color: var(--c-ink-900);">Paypal</div>
-                                        <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $info->paypal_account }}</div>
-                                    </div>
-                                </label>
-                            @endif
-
-                            @if($info->stripe)
-                                <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'stripe')">
-                                    <input type="radio" name="payment_method" value="stripe" class="gm-radio__input" wire:model="form.payment_method" @if(old('payment_method') == 'stripe') checked @endif>
-                                    <span class="gm-radio__box" aria-hidden="true"></span>
-                                    <div>
-                                        <div style="font-weight: 500; color: var(--c-ink-900);">Stripe</div>
-                                        <div style="font-size: var(--t-sm); color: var(--c-ink-500);">{{ $info->stripe_account }}</div>
-                                    </div>
-                                </label>
-                            @endif
-
-                            <label class="gm-payment-option" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-line); border-radius: var(--r-md); cursor: pointer;" wire:click="$set('form.payment_method', 'cash')">
-                                <input type="radio" name="payment_method" value="cash" class="gm-radio__input" wire:model="form.payment_method" @if(!old('payment_method') || old('payment_method') == 'cash') checked @endif>
-                                <span class="gm-radio__box" aria-hidden="true"></span>
-                                <div>
-                                    <div style="font-weight: 500; color: var(--c-ink-900);">Cash on Delivery</div>
-                                    <div style="font-size: var(--t-sm); color: var(--c-ink-500);">Pay when you receive your order</div>
-                                </div>
-                            </label>
-                        </div>
-
-                        {{-- Payment Details (for non-cash) --}}
-                        <div id="payment_input" style="display: none; margin-top: var(--s-4); padding: var(--s-4); background: var(--c-bg-2); border-radius: var(--r-md);" wire:show="form.payment_method != 'cash' && form.payment_method != 'stripe' && form.payment_method != 'paypal'">
-                            <div class="gm-form-row gm-form-row--2">
-                                <x-ui.input
-                                    name="pay_num"
-                                    label="Account Number"
-                                    placeholder="Enter account number"
-                                    wire:model="form.pay_num"
-                                />
-                                <x-ui.input
-                                    name="tnx_id"
-                                    label="Transaction Number"
-                                    placeholder="Enter transaction number"
-                                    wire:model="form.tnx_id"
-                                />
-                            </div>
-                        </div>
-
-                        {{-- Stripe --}}
-                        <div id="stripe-element" style="display: none; margin-top: var(--s-4);" wire:show="form.payment_method == 'stripe'">
-                            <div id="stripe-card-element"></div>
-                            <div id="stripe-errors" class="gm-error-text" style="margin-top: var(--s-2);" role="alert"></div>
-                        </div>
-
-                        {{-- PayPal --}}
-                        <div id="paypal-button-container" style="display: none; margin-top: var(--s-4);" wire:show="form.payment_method == 'paypal'"></div>
-                    </section>
-
-                    {{-- Place Order --}}
-                    <div class="gm-checkout-actions" style="display: flex; flex-direction: column; gap: var(--s-3);">
-                        <x-ui.button
-                            variant="primary"
-                            size="lg"
-                            full
-                            type="submit"
-                            :loading="$wire.placingOrder"
-                            :disabled="$cart->count() == 0"
-                        >
-                            {{ $bangla_text->order_confirm_text ?? 'Place Order' }}
-                        </x-ui.button>
+                        @endforeach
+                        {{-- Stripe/PayPal options are intentionally not offered here: the browser side
+                             of those flows does not match CheckoutController yet and has never been
+                             tested end to end. Rebuild and test them before showing them to customers. --}}
                     </div>
-                </form>
-            </div>
 
-            {{-- Order Summary --}}
-            <div class="gm-checkout-summary" style="position: sticky; top: calc(var(--header-h) + var(--s-4));">
+                    <div class="gm-checkout-mobile-pay" id="payment_input" @if(!array_key_exists($oldMethod, $mobileMethods)) hidden @endif>
+                        <p class="gm-checkout-note">After sending the money, enter your account number and the transaction ID.</p>
+                        <div class="gm-checkout-fields gm-checkout-fields--2">
+                            <x-ui.input name="pay_num" label="Your account number" placeholder="01XXXXXXXXX" inputmode="numeric" />
+                            <x-ui.input name="tnx_id" label="Transaction ID" placeholder="e.g. 8N7A6C5B4D" />
+                        </div>
+                    </div>
+                </section>
+
+                <div class="gm-checkout-actions">
+                    <x-ui.button variant="primary" size="lg" full type="submit">
+                        {{ $bangla_text->order_confirm_text ?? 'Place order' }} · <span data-gm-summary="total">{{ priceFormate($total) }}</span>
+                    </x-ui.button>
+                </div>
+            </form>
+
+            <aside class="gm-checkout-summary" aria-label="Order summary">
                 <x-ui.order-summary
+                    variant="checkout"
                     :subtotal="$subtotal"
                     :shipping="$chargeAmount"
-                    :discount="$discount + $couponDiscount"
-                    :tax="0"
+                    :discount="$couponDiscount"
+                    :savings="$savings"
                     :total="$total"
-                    :currency="$info->currency"
-                    :freeShippingThreshold="5000"
-                    variant="checkout"
-                    actionText="Place Order"
-                    onAction="placeOrder"
                 />
 
-                {{-- Order Items --}}
-                <div class="gm-checkout-items" style="margin-top: var(--s-5); background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden;">
-                    @foreach($cart as $key => $item)
-                        @php
-                            $lineTotal = $item['price'] * $item['quantity'];
-                            $maxQty = $item['is_stock'] ? ($item['stock'] ?? 99) : 99;
-                        @endphp
+                <div class="gm-checkout-items">
+                    @foreach($cart as $key => $line)
                         <x-ui.cart-line
                             :id="$key"
-                            :image="getImage('products', $item['image'])"
-                            :name="$item['name']"
-                            :href="route('front.products.show', [$item['product_id']])"
-                            :variant="['Size' => $item['size'] ?? null, 'Color' => $item['color'] ?? null]"
-                            :price="$item['price']"
-                            :originalPrice="($item['discount'] ?? 0) > 0 ? ($item['price'] + $item['discount']) : null"
-                            :quantity="$item['quantity']"
-                            :maxQuantity="$maxQty"
-                            :stock="$maxQty"
-                            drawer="true"
+                            :image="getImage('products', $line['image'])"
+                            :name="$line['name']"
+                            :href="route('front.products.show', [$line['product_id']])"
+                            :variant="['Size' => $line['size'] ?? null, 'Color' => $line['color'] ?? null]"
+                            :price="$line['price']"
+                            :originalPrice="($line['discount'] ?? 0) > 0 ? $line['price'] + $line['discount'] : null"
+                            :quantity="$line['quantity']"
+                            :editable="false"
+                            :drawer="true"
                         />
                     @endforeach
+                    <a class="gm-checkout-edit" href="{{ route('front.carts.index') }}">Edit bag</a>
                 </div>
-            </div>
+            </aside>
         </div>
     </x-ui.section>
 </main>
+@endsection
+
+@push('js')
+{{-- AJAX submit (→ redirect to the order confirmation), field-level validation
+     errors, and the coupon button. Bound to form#checkout_form. --}}
+<script src="{{ asset('frontend/js/checkout.js') }}"></script>
+@endpush
 
 @push('scripts')
 <script>
-    (function() {
-        // IP address fetch
-        fetch('https://api.ipify.org?format=json', {
-            headers: { 'Accept': 'application/json' }
-        })
-        .then(res => res.json())
-        .then(data => {
-            const ipInput = document.getElementById('ip_address');
-            if (ipInput) ipInput.value = data.ip;
-        })
-        .catch(err => console.error('Error fetching IP:', err));
+(function () {
+    const form = document.getElementById('checkout_form');
+    if (!form) return;
 
-        // Shipping charge change handler
-        document.addEventListener('change', function(e) {
-            if (e.target.matches('input[name="delivery_charge_id"]')) {
-                const charge = parseFloat(e.target.dataset.charge) || 0;
-                const subtotal = {{ $subtotal - $discount - $couponDiscount }};
-                const total = subtotal + charge;
+    // Prefer the public IP when the lookup works; the server-side value stays otherwise.
+    fetch('https://api.ipify.org?format=json')
+        .then((r) => r.json())
+        .then((d) => { if (d && d.ip) document.getElementById('ip_address').value = d.ip; })
+        .catch(() => {});
 
-                document.querySelectorAll('[data-gm-shipping-charge]').forEach(el => {
-                    el.textContent = '{{ $currencySymbol }} ' + charge.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                });
-                document.querySelectorAll('[data-gm-grand-total]').forEach(el => {
-                    el.textContent = '{{ $currencySymbol }} ' + total.toLocaleString(undefined, { minimumFractionDigits: 2 });
-                });
+    const subtotal = parseFloat(form.dataset.subtotal) || 0;
+    const coupon = parseFloat(form.dataset.coupon) || 0;
+    // Same output as the priceFormate() helper: store currency symbol, no decimals.
+    const money = (v) => (form.dataset.currency || '') + Math.round(v).toLocaleString('en-US');
 
-                // Update hidden amount input
-                document.querySelectorAll('input[name="amount"]').forEach(input => {
-                    input.value = total.toFixed(2);
-                });
-            }
-        });
-
-        // Payment method change handler
-        document.addEventListener('change', function(e) {
-            if (e.target.matches('input[name="payment_method"]')) {
-                const method = e.target.value;
-                const paymentInput = document.getElementById('payment_input');
-                const stripeEl = document.getElementById('stripe-element');
-                const paypalEl = document.getElementById('paypal-button-container');
-                const placeOrderBtn = document.querySelector('#checkout_form button[type="submit"]');
-
-                if (paymentInput) paymentInput.style.display = method === 'cash' || method === 'stripe' || method === 'paypal' ? 'none' : 'block';
-                if (stripeEl) stripeEl.style.display = method === 'stripe' ? 'block' : 'none';
-                if (paypalEl) paypalEl.style.display = method === 'paypal' ? 'block' : 'none';
-
-                if (placeOrderBtn) {
-                    placeOrderBtn.style.display = method === 'stripe' ? 'none' : 'block';
-                }
-
-                // Initialize Stripe if needed
-                if (method === 'stripe' && window.Stripe && !window.stripeInitialized) {
-                    initStripe();
-                }
-            }
-        });
-
-        // Stripe initialization
-        function initStripe() {
-            if (typeof Stripe === 'undefined') return;
-            window.stripeInitialized = true;
-            const stripe = Stripe('{{ $info->stripe_key ?? "" }}');
-            const elements = stripe.elements();
-            const card = elements.create('card', { style: { base: { fontSize: '16px', color: '#101010' } } });
-            card.mount('#stripe-card-element');
-            card.on('change', e => {
-                const errorEl = document.getElementById('stripe-errors');
-                if (errorEl) errorEl.textContent = e.error ? e.error.message : '';
-            });
-            window.stripeCard = card;
+    // Keep the summary in step with the chosen delivery area (same formula as the server).
+    form.addEventListener('change', (e) => {
+        if (e.target.matches('input[name="delivery_charge_id"]')) {
+            const charge = parseFloat(e.target.dataset.charge) || 0;
+            document.querySelectorAll('[data-gm-summary="shipping"]').forEach((el) => { el.textContent = charge > 0 ? money(charge) : 'Free'; });
+            document.querySelectorAll('[data-gm-summary="total"]').forEach((el) => { el.textContent = money(subtotal + charge - coupon); });
         }
 
-        // Form submission
-        const form = document.getElementById('checkout_form');
-        if (form) {
-            form.addEventListener('submit', async function(e) {
-                if (window.stripeCard && document.querySelector('input[name="payment_method"]:checked')?.value === 'stripe') {
-                    e.preventDefault();
-                    const submitBtn = form.querySelector('button[type="submit"]');
-                    submitBtn.disabled = true;
-                    submitBtn.classList.add('gm-btn--loading');
-
-                    const { error, paymentMethod } = await stripe.createPaymentMethod('card', window.stripeCard);
-                    if (error) {
-                        const errorEl = document.getElementById('stripe-errors');
-                        if (errorEl) errorEl.textContent = error.message;
-                        submitBtn.disabled = false;
-                        submitBtn.classList.remove('gm-btn--loading');
-                    } else {
-                        const input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'stripe_payment_method_id';
-                        input.value = paymentMethod.id;
-                        form.appendChild(input);
-                        form.submit();
-                    }
-                }
-            });
+        if (e.target.matches('input[name="payment_method"]')) {
+            const mobile = ['bkash', 'rocket', 'nogod'].includes(e.target.value);
+            document.getElementById('payment_input').hidden = !mobile;
         }
-
-        // Coupon apply
-        document.addEventListener('apply-coupon', function() {
-            // Handled by Livewire
-        });
-    })();
+    });
+})();
 </script>
-@endpush
-
-@push('scripts-bottom')
-@if($info->stripe)
-<script src="https://js.stripe.com/v3/" async></script>
-@endif
-@if($info->paypal)
-<script src="https://www.paypal.com/sdk/js?client-id={{ $info->paypal_client_id }}&currency={{ $info->currency == 'BDT' ? 'USD' : $info->currency }}" async></script>
-@endif
 @endpush

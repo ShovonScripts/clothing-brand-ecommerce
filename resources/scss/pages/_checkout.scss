@@ -1,1 +1,163 @@
-// Checkout page specific styles
+// Checkout — frontend/cart/checkout.blade.php
+// Mobile first: form, then summary. Summary sits beside the form from 1024px.
+
+.gm-checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .gm-checkout-layout {
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: var(--s-7);
+  }
+
+  .gm-checkout-summary {
+    position: sticky;
+    top: var(--s-6);
+  }
+}
+
+.gm-checkout-section {
+  margin-bottom: var(--s-5);
+  padding: var(--s-5);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+}
+
+.gm-checkout-section__title {
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--c-line);
+  font-family: var(--f-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-checkout-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-4);
+  margin-bottom: var(--s-4);
+}
+
+@media (min-width: 768px) {
+  .gm-checkout-fields--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gm-checkout-note {
+  margin: 0 0 var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+}
+
+// Radio cards (delivery area, payment method)
+.gm-checkout-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+
+.gm-checkout-option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: var(--s-3) var(--s-4);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition: border-color var(--d-fast) var(--e-out), background-color var(--d-fast) var(--e-out);
+
+  &:hover {
+    border-color: var(--c-ink-300);
+  }
+
+  &:has(.gm-checkout-option__input:checked) {
+    border-color: var(--c-ink-900);
+    background: var(--c-bg-2);
+  }
+}
+
+.gm-checkout-option__input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--c-ink-900);
+}
+
+.gm-checkout-option__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gm-checkout-option__title {
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-checkout-option__meta {
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+}
+
+.gm-checkout-option__price {
+  font-weight: 600;
+  color: var(--c-ink-900);
+  white-space: nowrap;
+}
+
+.gm-checkout-coupon {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+
+  > :first-child {
+    flex: 1;
+  }
+}
+
+.gm-checkout-mobile-pay {
+  margin-top: var(--s-4);
+  padding: var(--s-4);
+  background: var(--c-bg-2);
+  border-radius: var(--r-md);
+}
+
+// Field errors injected by public/frontend/js/checkout.js
+.gm-checkout-form .textdanger {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+}
+
+.gm-checkout-actions {
+  margin-top: var(--s-2);
+}
+
+.gm-checkout-items {
+  margin-top: var(--s-5);
+  padding: var(--s-2) var(--s-4) var(--s-4);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+}
+
+.gm-checkout-edit {
+  display: inline-block;
+  margin-top: var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--c-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

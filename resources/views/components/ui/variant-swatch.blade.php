@@ -25,7 +25,6 @@ if ($color) $style = 'style="--swatch-color: ' . e($color) . '"';
         class="{{ implode(' ', $classes) }}"
         {{ $style }}
         @if($disabled) disabled @endif
-        wire:click="{{ $onSelect }}"
         {{ $attributes->except(['class', 'disabled', 'style']) }}
         aria-pressed="{{ $selected ? 'true' : 'false' }}"
         aria-label="{{ $label ?: $value }}"
@@ -41,7 +40,6 @@ if ($color) $style = 'style="--swatch-color: ' . e($color) . '"';
         class="gm-variant-swatch__input"
         @if($selected) checked @endif
         @if($disabled) disabled @endif
-        @if($onSelect) wire:click="$dispatch('variant-select', { name: '{{ $name }}', value: '{{ $value }}' })" @endif
         {{ $attributes->except(['class', 'id', 'value', 'checked', 'disabled']) }}
     >
     <label

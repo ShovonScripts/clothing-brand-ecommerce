@@ -33,8 +33,15 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/magnific-popup.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/base.css')}}">
 
-    <!-- Legacy CSS (loads FIRST — lowest specificity, new styles override) -->
-    <link rel="stylesheet" href="{{ asset('frontend/css/legacy.css')}}">
+    <!-- Legacy theme CSS (loads FIRST — new styles override).
+         The header, footer, cart sidebar and not-yet-migrated pages still depend on these.
+         Delete a file only after no template uses its classes. -->
+    <link rel="stylesheet" href="{{ asset('frontend/css/style.min.css')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/header.css?v=007')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/update.css')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/newstyle.css?v=1.1')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/mens.css?v=1.2')}}">
+    <link rel="stylesheet" href="{{ asset('frontend/css/legacy.css?v=1.1')}}">
 
     <!-- New design system via Vite (loads LAST — highest specificity) -->
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])

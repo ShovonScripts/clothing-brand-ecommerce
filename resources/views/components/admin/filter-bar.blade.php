@@ -17,8 +17,6 @@
                 class="gm-admin-filter-bar__search-input"
                 placeholder="{{ $searchPlaceholder }}"
                 value="{{ $search }}"
-                @if($onSearch) wire:model.debounce.300ms="search" @endif
-                @if($searchUrl) wire:change="$dispatch('filter-change', { search: \$event.target.value })" @endif
             >
         </div>
     @endif
@@ -36,7 +34,6 @@
                     :value="request($key)"
                     :options="$filter['options']"
                     class="gm-admin-filter-bar__select"
-                    @if($onFilterChange) wire:change="$dispatch('filter-change', { key: '{{ $key }}', value: \$event.target.value })" @endif
                 />
             @elseif($filter['type'] === 'date')
                 <x-ui.input
@@ -45,7 +42,6 @@
                     type="date"
                     :value="request($key)"
                     size="sm"
-                    @if($onFilterChange) wire:change="$dispatch('filter-change', { key: '{{ $key }}', value: \$event.target.value })" @endif
                 />
             @elseif($filter['type'] === 'daterange')
                 <div style="display: flex; align-items: center; gap: var(--s-1);">
@@ -56,7 +52,6 @@
                         :value="request($key . '_from')"
                         size="sm"
                         placeholder="From"
-                        @if($onFilterChange) wire:change="$dispatch('filter-change', { key: '{{ $key }}_from', value: \$event.target.value })" @endif
                     />
                     <span style="color: var(--c-ink-500);">to</span>
                     <x-ui.input
@@ -66,7 +61,6 @@
                         :value="request($key . '_to')"
                         size="sm"
                         placeholder="To"
-                        @if($onFilterChange) wire:change="$dispatch('filter-change', { key: '{{ $key }}_to', value: \$event.target.value })" @endif
                     />
                 </div>
             @else
@@ -76,7 +70,6 @@
                     :value="request($key)"
                     size="sm"
                     :placeholder="$filter['placeholder'] ?? 'Filter...'"
-                    @if($onFilterChange) wire:model.debounce.300ms="filters.{{ $key }}" @endif
                 />
             @endif
         </div>
@@ -84,7 +77,7 @@
 
     <div class="gm-admin-filter-bar__actions">
         @if($filters->count() || $search !== null)
-            <x-ui.button variant="ghost" size="sm" wire:click="$dispatch('clear-filters')">
+            <x-ui.button variant="ghost" size="sm">
                 Clear
             </x-ui.button>
         @endif

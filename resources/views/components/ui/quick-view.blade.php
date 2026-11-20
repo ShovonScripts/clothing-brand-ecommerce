@@ -31,7 +31,6 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
     role="dialog"
     aria-modal="true"
     aria-labelledby="{{ $modalId }}-title"
-    wire:click.self="{{$onClose ?? \"\$dispatch('close-quick-view', { id: '".$overlayId."' }) }}"
 >
     <div id="{{ $modalId }}" class="gm-modal gm-modal--lg gm-modal--open" style="max-width: 800px;">
         <div class="gm-modal__header">
@@ -39,7 +38,6 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
             <button
                 type="button"
                 class="gm-modal__close"
-                wire:click="{{$onClose ?? \"\$dispatch('close-quick-view', { id: '".$overlayId."' }) }}"
                 aria-label="Close"
             >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -87,12 +85,12 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
                         </ul>
                     @endif
 
-                    <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-quick-view-form" wire:submit.prevent="addToCart" wire:key="quick-view-{{ $product->id }}">
+                    <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-quick-view-form">
                         @csrf
                         <input type="hidden" name="product_id" value="{{ $product->id }}">
-                        <input type="hidden" name="price" :value="$data['price']" wire:model.lazy="selectedPrice">
+                        <input type="hidden" name="price" :value="$data['price']">
                         <input type="hidden" name="is_stock" value="{{ $maxStock }}">
-                        <input type="hidden" name="quantity" value="1" wire:model="quantity">
+                        <input type="hidden" name="quantity" value="1">
 
                         @if($hasVariations)
                             <div class="gm-quick-view-variations" style="margin-bottom: var(--s-4);">
@@ -114,12 +112,11 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
                                             $isFirst = $loop->first;
                                         @endphp
                                         <x-ui.variant-swatch
-                                            :value="{{$v->id}}"
+                                            :value="$v->id"
                                             :label="$label"
                                             :selected="$isFirst"
                                             :disabled="$v->is_stock <= 0"
                                             size="md"
-                                            wire:click="$dispatch('variant-change', { id: {{$v->id}}, price: {{$v->price}}, stock: {{$v->is_stock}} })"
                                         />
                                     @endforeach
                                 </div>
@@ -138,7 +135,6 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
                                 :stock="$maxStock"
                                 size="md"
                                 inline
-                                wire:model="quantity"
                             />
                         </div>
 
@@ -148,7 +144,6 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
                                 size="lg"
                                 full
                                 type="submit"
-                                :loading="$wire.loading"
                                 :disabled="$maxStock <= 0"
                             >
                                 @if($maxStock <= 0)
@@ -163,7 +158,6 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
                                     variant="ghost"
                                     size="md"
                                     full
-                                    wire:click="addToWishlist"
                                     :active="$product->in_wishlist ?? false"
                                 >
                                     Save for later

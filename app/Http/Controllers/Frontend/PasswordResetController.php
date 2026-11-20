@@ -55,7 +55,7 @@ class PasswordResetController extends Controller {
 
         $otp=rand(100000,999999);
         $number=request('phone');
-        $msg='Your OTP Numbre Is :'.' '.$otp.'. Visit excellentfood.com.bd';
+        $msg='Your OTP is '.$otp.'.';
 
         $success=sendSMS($number ,$msg);
         $res=json_decode($success);
@@ -161,7 +161,7 @@ class PasswordResetController extends Controller {
         
         session()->put('user_data', $data);
         $number=request('phone');
-        $msg='Your OTP Numbre Is :'.' '.$otp.'. Otp is Expired After 2 Minutes.Visit excellentfood.com.bd';
+        $msg='Your OTP is '.$otp.'. It expires in 2 minutes.';
         $success=sendSMS($number ,$msg);
         $res=json_decode($success);
     
@@ -250,7 +250,7 @@ class PasswordResetController extends Controller {
             session()->put('user_data', $user_data);
             
             $number=$user_data['phone'];
-            $msg='Your OTP Numbre Is :'.' '.$otp.'. Otp is Expired After 2 Minutes.Visit excellentfood.com.bd';
+            $msg='Your OTP is '.$otp.'. It expires in 2 minutes.';
     
             $success=sendSMS($number ,$msg);
             $res=json_decode($success);

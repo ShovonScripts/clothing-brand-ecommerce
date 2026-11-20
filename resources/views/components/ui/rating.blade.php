@@ -40,7 +40,7 @@ $emptyStars = $max - $fullStars - ($hasHalf ? 1 : 0);
     </div>
 
     @if(!$readonly)
-        <input type="hidden" name="{{ $name }}" value="{{ $value }}" {{ $attributes->get('wire:model') ? 'wire:model="value"' : '' }}>
+        <input type="hidden" name="{{ $name }}" value="{{ $value }}">
     @endif
 
     @if($showCount)

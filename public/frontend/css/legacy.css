@@ -400,16 +400,12 @@ img { max-width: 100%; height: auto; }
 .container, .container-fluid { width: 100%; max-width: 1440px; margin-left: auto; margin-right: auto; padding-left: 32px; padding-right: 32px; }
 .main-wrapper { display: block; background: var(--gm-bone); }
 
-/* Buttons from mens.css */
-.gm-btn, .axil-btn, .btn.btn-primary, .btn.btn-dark, button.axil-btn {
+/* Buttons from mens.css — .gm-btn* is owned by the new design system (_button.scss) */
+.axil-btn, .btn.btn-primary, .btn.btn-dark, button.axil-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
   min-height: 48px; padding: 13px 30px; border: 1px solid var(--gm-ink);
   border-radius: 0; background: var(--gm-ink); color: #fff;
   font-family: var(--gm-body); font-size: 12px; font-weight: 500; letter-spacing: 0.18em;
   text-transform: uppercase; transition: all .25s ease;
 }
-.gm-btn:hover, .axil-btn:hover, .btn.btn-primary:hover, .btn.btn-dark:hover { background: var(--gm-charcoal); border-color: var(--gm-charcoal); }
-.gm-btn--secondary { background: transparent; color: var(--gm-ink); border-color: var(--gm-line); }
-.gm-btn--secondary:hover { background: var(--gm-bg-2); }
-.gm-btn--ghost { background: transparent; color: var(--gm-ink); border-color: transparent; padding: 13px 24px; }
-.gm-btn--ghost:hover { background: var(--gm-bg-2); }
+.axil-btn:hover, .btn.btn-primary:hover, .btn.btn-dark:hover { background: var(--gm-charcoal); border-color: var(--gm-charcoal); }

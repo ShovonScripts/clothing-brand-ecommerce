@@ -26,8 +26,8 @@
 
     <div class="gm-admin-save-bar__right">
         @if($showCancel)
-            <x-ui.button variant="ghost" size="md" wire:click="{{ $onCancel }}" :disabled="$saving">{{ $cancelText }}</x-ui.button>
+            <x-ui.button variant="ghost" size="md" :disabled="$saving">{{ $cancelText }}</x-ui.button>
         @endif
-        <x-ui.button variant="primary" size="md" class="gm-admin-save-bar__btn" type="submit" wire:click="{{ $onSave }}" :loading="$saving" :disabled="$saving">{{ $saveText }}</x-ui.button>
+        <x-ui.button variant="primary" size="md" class="gm-admin-save-bar__btn" type="submit" :loading="$saving" :disabled="$saving">{{ $saveText }}</x-ui.button>
     </div>
 </div>

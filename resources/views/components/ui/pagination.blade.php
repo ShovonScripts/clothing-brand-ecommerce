@@ -23,7 +23,6 @@ if ($end < $lastPage) $end = min($lastPage, $start + 2 * $range);
                 type="button"
                 class="gm-pagination__btn"
                 {{ $currentPage <= 1 ? 'disabled' : '' }}
-                @if($onPageChange) wire:click="$dispatch('page-change', { page: {{ $currentPage - 1 }} })" @endif
                 aria-label="Previous page"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 18 9 12 15 6"></polyline></svg>
@@ -36,7 +35,6 @@ if ($end < $lastPage) $end = min($lastPage, $start + 2 * $range);
                 <button
                     type="button"
                     class="gm-pagination__link"
-                    @if($onPageChange) wire:click="$dispatch('page-change', { page: 1 })" @endif
                 >1</button>
             </li>
             @if($start > 2)
@@ -53,7 +51,6 @@ if ($end < $lastPage) $end = min($lastPage, $start + 2 * $range);
                     <button
                         type="button"
                         class="gm-pagination__link"
-                        @if($onPageChange) wire:click="$dispatch('page-change', { page: {{ $i }} })" @endif
                     >{{ $i }}</button>
                 @endif
             </li>
@@ -68,7 +65,6 @@ if ($end < $lastPage) $end = min($lastPage, $start + 2 * $range);
                 <button
                     type="button"
                     class="gm-pagination__link"
-                    @if($onPageChange) wire:click="$dispatch('page-change', { page: {{ $lastPage }} })" @endif
                 >{{ $lastPage }}</button>
             </li>
         @endif
@@ -79,7 +75,6 @@ if ($end < $lastPage) $end = min($lastPage, $start + 2 * $range);
                 type="button"
                 class="gm-pagination__btn"
                 {{ $currentPage >= $lastPage ? 'disabled' : '' }}
-                @if($onPageChange) wire:click="$dispatch('page-change', { page: {{ $currentPage + 1 }} })" @endif
                 aria-label="Next page"
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"></polyline></svg>

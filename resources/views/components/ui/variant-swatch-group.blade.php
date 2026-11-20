@@ -46,7 +46,6 @@ $groupId = $attributes->get('id') ?? 'gm-swatch-group-' . uniqid();
                     :disabled="$disabled"
                     :size="$size"
                     :onSelect="$onChange"
-                    wire:click="$dispatch('chip-select', { name: '{{ $name }}', value: '{{ $value }}' })"
                 >
                     {{ $labelText }}
                 </x-ui.chip>

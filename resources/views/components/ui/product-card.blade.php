@@ -81,9 +81,11 @@ $class = implode(' ', $classes);
         </div>
     </a>
 
-    @if($attributes->has('actions'))
+    {{-- Optional actions (e.g. a quick-add form). Kept outside the link so the
+         HTML stays valid and the buttons don't navigate to the product page. --}}
+    @isset($actions)
         <div class="gm-product-card__actions">
-            {{ $attributes->get('actions') }}
+            {{ $actions }}
         </div>
-    @endif
+    @endisset
 </article>

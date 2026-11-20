@@ -65,7 +65,7 @@ class AuthController extends Controller
         
         session()->put('user_data', $data);        
         $number=request('phone');        
-        $msg='Your One-Time PIN is '.$otp.'. It will expire in 3 minutes.Visit softitsecurity.com';
+        $msg='Your One-Time PIN is '.$otp.'. It will expire in 3 minutes.';
         $success=sendSMS($number ,$msg);        
         $res=json_decode($success);
     	
@@ -147,7 +147,7 @@ class AuthController extends Controller
             $user_data['otp_verify']=$otp;
             session()->put('user_data', $user_data);
             $number=$user_data['phone'];
-            $msg='Your One-Time PIN is '.$otp.'. It will expire in 3 minutes.Visit softitsecurity.com';
+            $msg='Your One-Time PIN is '.$otp.'. It will expire in 3 minutes.';
     
             $success=sendSMS($number ,$msg);
             $res=json_decode($success);

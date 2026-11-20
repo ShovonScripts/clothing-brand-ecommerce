@@ -86,7 +86,6 @@
                                     :wishlistId="'wishlist_' . $product->id"
                                     :inWishlist="true"
                                     :onRemove="true"
-                                    wire:key="wishlist-{{ $product->id }}"
                                 />
                             @endforeach
                         </x-ui.product-grid>

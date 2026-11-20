@@ -121,7 +121,6 @@
                             variant="primary"
                             size="md"
                             type="submit"
-                            :loading="$wire.updatingProfile"
                         >
                             Save Changes
                         </x-ui.button>
@@ -170,7 +169,6 @@
                             variant="primary"
                             size="md"
                             type="submit"
-                            :loading="$wire.updatingPassword"
                         >
                             Update Password
                         </x-ui.button>
@@ -187,7 +185,6 @@
                         <x-ui.button
                             variant="secondary"
                             size="sm"
-                            wire:click="$dispatch('open-address-modal')"
                         >
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             Add Address
@@ -197,7 +194,7 @@
                     @if($addresses->count())
                         <div class="gm-address-list" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--s-4);">
                             @foreach($addresses as $address)
-                                <article class="gm-address-card" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-md); padding: var(--s-4); transition: box-shadow var(--d-base) var(--e-out);" wire:key="address-{{ $address->id }}">
+                                <article class="gm-address-card" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-md); padding: var(--s-4); transition: box-shadow var(--d-base) var(--e-out);">
                                     <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--s-3);">
                                         <div>
                                             <p style="font-weight: 500; color: var(--c-ink-900); margin: 0 0 var(--s-1);">{{ $address->name }}</p>
@@ -206,10 +203,10 @@
                                             @endif
                                         </div>
                                         <div style="display: flex; gap: var(--s-1);">
-                                            <button type="button" class="gm-icon-btn gm-icon-btn--sm" wire:click="editAddress({{ $address->id }})" aria-label="Edit address">
+                                            <button type="button" class="gm-icon-btn gm-icon-btn--sm" aria-label="Edit address">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                                             </button>
-                                            <button type="button" class="gm-icon-btn gm-icon-btn--sm gm-icon-btn--danger" wire:click="deleteAddress({{ $address->id }})" aria-label="Delete address">
+                                            <button type="button" class="gm-icon-btn gm-icon-btn--sm gm-icon-btn--danger" aria-label="Delete address">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                             </button>
                                         </div>
@@ -243,8 +240,7 @@
                             title="No saved addresses"
                             message="Add an address to speed up checkout."
                             action="Add Address"
-                            :actionUrl="#"
-                            wire:click="$dispatch('open-address-modal')"
+                            actionUrl="#"
                         />
                     @endif
                 </div>
@@ -258,7 +254,7 @@
 
                     <div style="display: flex; flex-direction: column; gap: var(--s-4);">
                         <label class="gm-checkbox" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); background: var(--c-bg-2); border-radius: var(--r-md); cursor: pointer;">
-                            <input type="checkbox" name="email_newsletter" checked wire:model="user.email_newsletter" class="gm-checkbox__input">
+                            <input type="checkbox" name="email_newsletter" checked class="gm-checkbox__input">
                             <span class="gm-checkbox__box" aria-hidden="true"></span>
                             <div style="flex: 1;">
                                 <span class="gm-checkbox__label" style="font-weight: 500;">Newsletter & Promotions</span>
@@ -267,7 +263,7 @@
                         </label>
 
                         <label class="gm-checkbox" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); background: var(--c-bg-2); border-radius: var(--r-md); cursor: pointer;">
-                            <input type="checkbox" name="email_order_updates" checked wire:model="user.email_order_updates" class="gm-checkbox__input">
+                            <input type="checkbox" name="email_order_updates" checked class="gm-checkbox__input">
                             <span class="gm-checkbox__box" aria-hidden="true"></span>
                             <div style="flex: 1;">
                                 <span class="gm-checkbox__label" style="font-weight: 500;">Order Updates</span>
@@ -276,7 +272,7 @@
                         </label>
 
                         <label class="gm-checkbox" style="display: flex; align-items: center; gap: var(--s-3); padding: var(--s-4); background: var(--c-bg-2); border-radius: var(--r-md); cursor: pointer;">
-                            <input type="checkbox" name="email_recommendations" wire:model="user.email_recommendations" class="gm-checkbox__input">
+                            <input type="checkbox" name="email_recommendations" class="gm-checkbox__input">
                             <span class="gm-checkbox__box" aria-hidden="true"></span>
                             <div style="flex: 1;">
                                 <span class="gm-checkbox__label" style="font-weight: 500;">Personalized Recommendations</span>
@@ -289,8 +285,6 @@
                         <x-ui.button
                             variant="primary"
                             size="md"
-                            wire:click="savePreferences"
-                            :loading="$wire.savingPreferences"
                         >
                             Save Preferences
                         </x-ui.button>

@@ -16,7 +16,6 @@ $overlayId = $drawerId . '-overlay';
     id="{{ $overlayId }}"
     class="gm-drawer-overlay"
     data-gm-drawer-close
-    wire:click="$dispatch('close-drawer', { id: '{{ $overlayId }}' })"
     aria-hidden="true"
 ></div>
 
@@ -35,7 +34,7 @@ $overlayId = $drawerId . '-overlay';
                 <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
             @endif
         </a>
-        <button type="button" class="gm-drawer__close" aria-label="Close menu" wire:click="$dispatch('close-drawer', { id: '{{ $overlayId }}' })">
+        <button type="button" class="gm-drawer__close" aria-label="Close menu">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
     </div>

@@ -34,7 +34,7 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
         :items="[
             ['label' => 'Home', 'url' => route('front.home')],
             ['label' => 'Shop', 'url' => route('front.products.index')],
-            ['label' => \$product->name],
+            ['label' => $product->name],
         ]"
     />
 
@@ -80,12 +80,12 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                     </ul>
                 @endif
 
-                <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-pdp-form" wire:submit.prevent="addToCart" wire:key="pdp-form">
+                <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-pdp-form">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <input type="hidden" name="price" :value="$data['price']" wire:model.lazy="selectedPrice">
+                    <input type="hidden" name="price" :value="$data['price']">
                     <input type="hidden" name="is_stock" value="{{ $maxStock }}">
-                    <input type="hidden" name="quantity" value="1" wire:model="quantity">
+                    <input type="hidden" name="quantity" value="1">
 
                     @if($hasVariations)
                         <div class="gm-pdp-variations" style="margin-bottom: var(--s-4);">
@@ -99,7 +99,6 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                                     id="variation_{{ $variationId }}"
                                     class="gm-variant-swatch__input"
                                     @if($isSelected) checked @endif
-                                    wire:model="selectedVariationId"
                                     @if($variation['stock'] <= 0) disabled @endif
                                 >
                             @endforeach
@@ -112,7 +111,6 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                                         :selected="$variationId == $selectedVariationId"
                                         :disabled="$variation['stock'] <= 0"
                                         size="md"
-                                        wire:click="$dispatch('variant-change', { id: {{ $variationId }}, price: {{ $variation['price']}}, stock: {{ $variation['stock']}} })"
                                     />
                                 @endforeach
                             </div>
@@ -131,7 +129,6 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                             :stock="$maxStock"
                             size="md"
                             inline
-                            wire:model="quantity"
                         />
                     </div>
 
@@ -141,7 +138,6 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                             size="lg"
                             full
                             type="submit"
-                            :loading="$wire.loading"
                             :disabled="$maxStock <= 0"
                         >
                             @if($maxStock <= 0)
@@ -156,7 +152,6 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                                 variant="ghost"
                                 size="md"
                                 full
-                                wire:click="addToWishlist"
                                 :active="$product->in_wishlist ?? false"
                             >
                                 Save for later
@@ -188,40 +183,35 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
 
     {{-- Description Tabs --}}
     <x-ui.section size="md" background="bg">
-        <x-ui.tabs variant="underline" :active="0" onChange="tabChange">
-            <x-slot name="tabs">
-                <x-ui.tab label="Description" />
-                @if($product->video_link)
-                    <x-ui.tab label="Video" />
-                @endif
-                @if($product->reviews->count())
-                    <x-ui.tab label="Reviews ({{ $product->reviews->count() }})" />
-                @endif
-            </x-slot>
-
-            <x-slot name="panels">
-                <div class="gm-prose" style="font-family: var(--f-body); font-size: var(--t-md); line-height: var(--lh-loose); color: var(--c-ink-700);">
-                    @if($product->video_link)
-                        <div class="gm-video-wrapper" style="position: relative; width: 100%; padding-top: 56.25%; margin: var(--s-6) 0; border-radius: var(--r-md); overflow: hidden;">
-                            {!! $product->video_link !!}
-                        </div>
-                    @endif
-                    {!! $product->body !!}
+        @php
+            $reviewCount = $product->reviews->count();
+            $tabLabels = ['Description'];
+            if ($product->video_link) $tabLabels[] = 'Video';
+            if ($reviewCount) $tabLabels[] = "Reviews ({$reviewCount})";
+        @endphp
+        <x-ui.tabs variant="underline" :labels="$tabLabels">
+                <div class="gm-tabs__panel" data-gm-tab-panel>
+                    <div class="gm-prose" style="font-family: var(--f-body); font-size: var(--t-md); line-height: var(--lh-loose); color: var(--c-ink-700);">
+                        {!! $product->body !!}
+                    </div>
                 </div>
 
                 @if($product->video_link)
-                    <div class="gm-video-wrapper" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: var(--r-md); overflow: hidden;">
-                        {!! $product->video_link !!}
+                    <div class="gm-tabs__panel" data-gm-tab-panel>
+                        <div class="gm-video-wrapper" style="position: relative; width: 100%; padding-top: 56.25%; border-radius: var(--r-md); overflow: hidden;">
+                            {!! $product->video_link !!}
+                        </div>
                     </div>
                 @endif
 
-                @if($product->reviews->count())
-                    <div class="gm-reviews" style="display: flex; flex-direction: column; gap: var(--s-5);">
+                @if($reviewCount)
+                    <div class="gm-tabs__panel" data-gm-tab-panel>
+                      <div class="gm-reviews" style="display: flex; flex-direction: column; gap: var(--s-5);">
                         @foreach($product->reviews as $review)
                             <article class="gm-review" style="padding: var(--s-4); background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-md);">
                                 <div class="gm-review-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-2);">
                                     <div>
-                                        <strong style="font-family: var(--f-display); color: var(--c-ink-900);">{{ $review->user->name ?? 'Customer' }}</strong>
+                                        <strong style="font-family: var(--f-display); color: var(--c-ink-900);">{{ full_name($review->user) ?: 'Customer' }}</strong>
                                         <time style="font-size: var(--t-sm); color: var(--c-ink-500); margin-inline-start: var(--s-3);">{{ $review->created_at->format('F j, Y') }}</time>
                                     </div>
                                     <x-ui.rating :value="$review->rating" :max="5" readonly size="sm" />
@@ -229,9 +219,9 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                                 <p style="margin: 0; color: var(--c-ink-700);">{{ $review->comment }}</p>
                             </article>
                         @endforeach
+                      </div>
                     </div>
                 @endif
-            </x-slot>
         </x-ui.tabs>
     </x-ui.section>
 
@@ -257,28 +247,28 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
             <span class="gm-sticky-count" id="gm-sticky-count" style="position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; background: var(--c-accent); color: var(--c-accent-ink); font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; border-radius: 8px;">{{ getTotalCart() }}</span>
         </button>
 
-        <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-sticky-form" wire:submit.prevent="buyNow">
+        <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-sticky-form">
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
             <input type="hidden" name="price" :value="$data['price']">
             <input type="hidden" name="is_stock" value="{{ $maxStock }}">
-            <input type="hidden" name="quantity" value="1" wire:model="buyNowQuantity">
+            <input type="hidden" name="quantity" value="1">
             @if($hasVariations)
-                <input type="hidden" name="variation_id" class="gm-sticky-variation" value="{{ $selectedVariationId }}" wire:model="selectedVariationId">
+                <input type="hidden" name="variation_id" class="gm-sticky-variation" value="{{ $selectedVariationId }}">
             @else
                 <input type="hidden" name="variation_id" value="{{ $selectedVariationId }}">
             @endif
             <button type="submit" class="gm-sticky-btn gm-sticky-btn--buy" style="background: var(--c-accent); color: var(--c-accent-ink); font-family: var(--f-body); font-size: var(--t-sm); font-weight: 500; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: var(--s-3); border: none; cursor: pointer; width: 100%; height: 100%;">Buy Now</button>
         </form>
 
-        <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-sticky-form" wire:submit.prevent="addToCart">
+        <form method="POST" action="{{ route('front.carts.storeCart') }}" class="gm-sticky-form">
             @csrf
             <input type="hidden" name="product_id" value="{{ $product->id }}">
             <input type="hidden" name="price" :value="$data['price']">
             <input type="hidden" name="is_stock" value="{{ $maxStock }}">
-            <input type="hidden" name="quantity" value="1" wire:model="quantity">
+            <input type="hidden" name="quantity" value="1">
             @if($hasVariations)
-                <input type="hidden" name="variation_id" class="gm-sticky-variation" value="{{ $selectedVariationId }}" wire:model="selectedVariationId">
+                <input type="hidden" name="variation_id" class="gm-sticky-variation" value="{{ $selectedVariationId }}">
             @else
                 <input type="hidden" name="variation_id" value="{{ $selectedVariationId }}">
             @endif

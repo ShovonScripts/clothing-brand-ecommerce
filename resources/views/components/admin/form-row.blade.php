@@ -80,11 +80,10 @@ $class = implode(' ', $classes);
                             accept="image/*"
                             class="gm-admin-image-uploader__input"
                             @if($disabled) disabled @endif
-                            wire:change="$dispatch('image-upload', { key: '{{ $key }}', file: \$event.target.files[0] })"
                         >
                         @if($value)
                             <img src="{{ $value }}" alt="" class="gm-admin-image-uploader__preview">
-                            <button type="button" class="gm-admin-image-uploader__remove" wire:click="$dispatch('image-remove', { key: '{{ $key }}' })" aria-label="Remove image">
+                            <button type="button" class="gm-admin-image-uploader__remove" aria-label="Remove image">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                             </button>
                         @else

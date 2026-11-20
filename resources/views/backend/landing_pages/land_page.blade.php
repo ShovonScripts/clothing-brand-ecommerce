@@ -1125,7 +1125,7 @@
           
         <div class="footer">
             <div class="copyright">
-                <small> 2023 VesojCity.com | Developed By Vesojcity</small>
+                <small>&copy; {{ date('Y') }} {{ \App\Models\Information::value('site_name') }}</small>
             </div>
         </div>
     </div>

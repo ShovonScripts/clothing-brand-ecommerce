@@ -137,3 +137,6 @@
 </script>
 
 @stack('js')
+{{-- New design-system pages and components push to these two stacks. --}}
+@stack('scripts')
+@stack('scripts-bottom')

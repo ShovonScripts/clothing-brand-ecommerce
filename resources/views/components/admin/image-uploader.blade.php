@@ -29,7 +29,6 @@ $inputId = $name ?? 'gm-upload-' . uniqid();
             @if($multiple) multiple @endif
             class="gm-admin-image-uploader__input"
             @if($disabled) disabled @endif
-            wire:change="$dispatch('image-upload', { key: '{{ $name }}', files: \$event.target.files })"
         >
 
         @if($value)
@@ -37,14 +36,14 @@ $inputId = $name ?? 'gm-upload-' . uniqid();
                 @foreach($value as $index => $img)
                     <div style="position: relative; display: inline-block; margin: var(--s-2);">
                         <img src="{{ $img }}" alt="" class="gm-admin-image-uploader__preview" style="max-width: 120px; max-height: 120px;">
-                        <button type="button" class="gm-admin-image-uploader__remove" wire:click="$dispatch('image-remove', { key: '{{ $name }}', index: {{ $index }} })" aria-label="Remove image">
+                        <button type="button" class="gm-admin-image-uploader__remove" aria-label="Remove image">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
                 @endforeach
             @else
                 <img src="{{ $value }}" alt="" class="gm-admin-image-uploader__preview" style="max-width: 100%; max-height: 160px;">
-                <button type="button" class="gm-admin-image-uploader__remove" wire:click="$dispatch('image-remove', { key: '{{ $name }}' })" aria-label="Remove image">
+                <button type="button" class="gm-admin-image-uploader__remove" aria-label="Remove image">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             @endif

@@ -27,14 +27,16 @@ $galleryId = 'gm-gallery-' . uniqid();
         @endif
 
         @if(count($thumbs) > 1)
-            <button
-                type="button"
+            <a
+                href="{{ $mainImg }}"
+                target="_blank"
+                rel="noopener"
                 class="gm-gallery__zoom-trigger"
-                aria-label="Zoom image"
+                aria-label="Open full-size image"
                 data-gm-gallery-zoom-open
             >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-            </button>
+            </a>
 
             <span class="gm-gallery__swipe-hint" aria-hidden="true">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 20 12 12 20 20"></polyline></svg>
@@ -80,8 +82,10 @@ $galleryId = 'gm-gallery-' . uniqid();
             const img = thumb.querySelector('img');
             if (!img) return;
 
-            mainImg.src = img.src.replace(/\/[^/]+\.(jpg|jpeg|png|webp)$/i, '/800x800.$1');
+            // Images are served as uploaded (no resized variants), so show the same file.
+            mainImg.src = img.src;
             mainImg.alt = img.alt;
+            if (zoomTrigger) zoomTrigger.href = img.src;
 
             thumbs.forEach((t, i) => {
                 t.classList.toggle('gm-gallery__thumbnail--active', i === index);

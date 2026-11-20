@@ -14,7 +14,11 @@
 @use 'components/alert';
 @use 'components/toast';
 @use 'components/modal';
-@use 'components/drawer';
+// components/drawer, header, footer and mobile-nav are NOT loaded: those Blade
+// components aren't used yet, and their selectors (.gm-header, .gm-footer,
+// .gm-nav, .gm-drawer, …) collide with the live header/footer partials, which
+// are still styled by public/frontend/css/mens.css. Re-enable them in the same
+// change that switches frontend/app.blade.php to the new components.
 @use 'components/tabs';
 @use 'components/accordion';
 @use 'components/breadcrumb';
@@ -37,10 +41,7 @@
 @use 'components/empty-state';
 
 // Layout components
-@use 'components/header';
 @use 'components/mega-menu';
-@use 'components/mobile-nav';
-@use 'components/footer';
 @use 'components/section-header';
 @use 'components/container-grid';
 @use 'components/prose';
@@ -51,3 +52,4 @@
 @use 'pages/pdp';
 @use 'pages/cart';
 @use 'pages/checkout';
+@use 'pages/account';

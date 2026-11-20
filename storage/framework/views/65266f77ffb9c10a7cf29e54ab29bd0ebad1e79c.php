@@ -136,4 +136,7 @@
 
 </script>
 
-<?php echo $__env->yieldPushContent('js'); ?><?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/frontend/partials/js.blade.php ENDPATH**/ ?>
+<?php echo $__env->yieldPushContent('js'); ?>
+
+<?php echo $__env->yieldPushContent('scripts'); ?>
+<?php echo $__env->yieldPushContent('scripts-bottom'); ?><?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/frontend/partials/js.blade.php ENDPATH**/ ?>

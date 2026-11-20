@@ -1,158 +1,253 @@
-
-
 <?php $__env->startSection('title', 'Shop — GENTRY'); ?>
 
 <?php $__env->startSection('content'); ?>
+<?php
+    // Frontend\ProductController@index passes $cats, $types, $sizes. Products
+    // are fetched over AJAX from the same route (rendered by index_data.blade.php),
+    // so every filter below uses the parameter names that controller reads:
+    // cat_id[], size_id[], brand_id, q, shorting, page.
+    $selectedCats = array_map('strval', (array) request('cat_id', []));
+    // Links elsewhere on the site use ?category_id= / ?sub_category_id=.
+    $linkedCategory = request('sub_category_id') ?: request('category_id');
+    if ($linkedCategory) $selectedCats[] = (string) $linkedCategory;
+    $selectedCats = array_values(array_unique($selectedCats));
+
+    $topCategoryIds = $cats->pluck('id')->map(fn ($id) => (string) $id)->all();
+    // A linked sub-category isn't in the sidebar list; keep it as a hidden filter.
+    $hiddenCats = array_diff($selectedCats, $topCategoryIds);
+
+    $filters = [
+        'cat_id' => [
+            'label' => 'Category',
+            'options' => $cats->map(fn ($c) => ['value' => $c->id, 'label' => $c->name])->all(),
+        ],
+        'brand_id' => [
+            'label' => 'Brand',
+            'type' => 'radio',
+            'options' => collect([['value' => '', 'label' => 'All brands']])
+                ->merge($types->map(fn ($t) => ['value' => $t->id, 'label' => $t->name]))->all(),
+        ],
+        'size_id' => [
+            'label' => 'Size',
+            'options' => $sizes->map(fn ($s) => ['value' => $s->id, 'label' => $s->title])->all(),
+        ],
+    ];
+    $selected = [
+        'cat_id' => $selectedCats,
+        'brand_id' => request('brand_id', ''),
+        'size_id' => (array) request('size_id', []),
+    ];
+?>
+
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="<?php echo e(route('front.home')); ?>">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Shop</li>
-            </ul>
-        </div>
-    </div>
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.breadcrumb','data' => ['items' => [
+        ['label' => 'Home', 'url' => route('front.home')],
+        ['label' => 'Shop'],
+    ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.breadcrumb'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['items' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+        ['label' => 'Home', 'url' => route('front.home')],
+        ['label' => 'Shop'],
+    ])]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
 
-    <div class="axil-shop-area">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-3">
-                    <aside class="axil-shop-sidebar" id="gm-shop-sidebar">
-                        <div class="sidebar-header d-lg-none">
-                            <h5>Filters</h5>
-                            <button class="sidebar-close filter-close-btn" type="button" aria-label="Close filters"><i class="fas fa-times"></i></button>
-                        </div>
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.section','data' => ['size' => 'md']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.section'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['size' => 'md']); ?>
+        <form id="gm-shop-filters" class="gm-listing-layout" action="<?php echo e(route('front.products.index')); ?>" method="GET" role="search">
+            <?php if(request('q')): ?>
+                <input type="hidden" name="q" value="<?php echo e(request('q')); ?>">
+            <?php endif; ?>
+            <?php $__currentLoopData = $hiddenCats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $catId): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="cat_id[]" value="<?php echo e($catId); ?>">
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
-                        <div class="toggle-list product-categories active">
-                            <h6 class="title">Category</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    <?php $__currentLoopData = $cats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <li class="category <?php echo e(request('category_id') == $cat->id ? 'current-cat' : ''); ?>" data-value="<?php echo e($cat->id); ?>"><a><?php echo e($cat->name); ?></a></li>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </ul>
-                            </div>
-                        </div>
+            <div class="gm-listing-filters-overlay" data-gm-shop-filters-close></div>
+            <div class="gm-listing-filters" id="gm-shop-filter-panel" aria-label="Product filters">
+                <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.filter-sidebar','data' => ['filters' => $filters,'selected' => $selected]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.filter-sidebar'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['filters' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($filters),'selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($selected)]); ?>
+                    <div class="gm-listing-filters__footer">
+                        <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.button','data' => ['variant' => 'primary','full' => true,'class' => 'gm-listing-apply','dataGmShopFiltersClose' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'primary','full' => true,'class' => 'gm-listing-apply','data-gm-shop-filters-close' => true]); ?>Show results <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
+                    </div>
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
+            </div>
 
-                        <?php if($types->count()): ?>
-                        <div class="toggle-list product-categories active">
-                            <h6 class="title">Brand</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    <?php $__currentLoopData = $types; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $type): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <li class="brand <?php echo e(request('brand_id') == $type->id ? 'current-cat' : ''); ?>" data-value="<?php echo e($type->id); ?>"><a><?php echo e($type->name); ?></a></li>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </ul>
-                            </div>
-                        </div>
-                        <?php endif; ?>
+            <div class="gm-listing-main">
+                <div class="gm-listing-toolbar">
+                    <?php if(request('q')): ?>
+                        <p class="gm-listing-query">Results for “<?php echo e(request('q')); ?>”</p>
+                    <?php endif; ?>
 
-                        <div class="toggle-list product-size active">
-                            <h6 class="title">Size</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    <?php $__currentLoopData = $sizes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <li class="size" data-value="<?php echo e($size->id); ?>"><a><?php echo e($size->title); ?></a></li>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="gm-listing-controls">
+                        <button type="button" class="gm-btn gm-btn--secondary gm-btn--sm gm-listing-filter-toggle"
+                                aria-controls="gm-shop-filter-panel" aria-expanded="false" data-gm-shop-filters-open>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                            Filters
+                        </button>
 
-                        <a href="<?php echo e(route('front.products.index')); ?>" class="axil-btn gm-btn--ghost">Reset filters</a>
-                    </aside>
+                        <label class="visually-hidden" for="gm-shop-sort">Sort products</label>
+                        <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.select','data' => ['id' => 'gm-shop-sort','name' => 'shorting','placeholder' => '','value' => request('shorting', 'desc'),'options' => [
+                                'desc' => 'Newest first',
+                                'asc' => 'Oldest first',
+                                'name' => 'Name A–Z',
+                                'price_low' => 'Price: low to high',
+                                'price_high' => 'Price: high to low',
+                            ],'class' => 'gm-listing-sort']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.select'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['id' => 'gm-shop-sort','name' => 'shorting','placeholder' => '','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request('shorting', 'desc')),'options' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+                                'desc' => 'Newest first',
+                                'asc' => 'Oldest first',
+                                'name' => 'Name A–Z',
+                                'price_low' => 'Price: low to high',
+                                'price_high' => 'Price: high to low',
+                            ]),'class' => 'gm-listing-sort']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
+                    </div>
                 </div>
 
-                <div class="col-lg-9 products-block">
-                    <div class="axil-shop-top">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px">
-                            <p class="filter-results mb-0">The full collection</p>
-                            <div class="d-flex align-items-center" style="gap:12px">
-                                <button class="product-filter-mobile filter-toggle d-lg-none" type="button"><i class="fas fa-filter"></i> Filter</button>
-                                <select class="single-select" aria-label="Sort products">
-                                    <option value="desc" selected>Newest first</option>
-                                    <option value="asc">Oldest first</option>
-                                    <option value="name">Name A–Z</option>
-                                    <option value="price_low">Price: low to high</option>
-                                    <option value="price_high">Price: high to low</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row row--15" id="product_data"></div>
+                <div id="gm-shop-products" class="gm-listing-products" aria-live="polite" aria-busy="true">
+                    <p class="gm-listing-results">Loading products…</p>
                 </div>
             </div>
-        </div>
-    </div>
+        </form>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
 </main>
 <?php $__env->stopSection(); ?>
 
-<?php $__env->startPush('js'); ?>
-<script type="text/javascript">
-    $(document).ready(function () {
-        fetchData();
+<?php $__env->startPush('scripts'); ?>
+<script>
+(function () {
+    const form = document.getElementById('gm-shop-filters');
+    const target = document.getElementById('gm-shop-products');
+    if (!form || !target) return;
 
-        $('li.category, li.brand').click(function () {
-            $(this).toggleClass('current-cat');
-            fetchData();
-        });
+    const panel = document.getElementById('gm-shop-filter-panel');
+    const overlay = form.querySelector('.gm-listing-filters-overlay');
+    const toggle = form.querySelector('[data-gm-shop-filters-open]');
+    let inflight = null;
 
-        $('li.size').click(function () {
-            $(this).toggleClass('chosen');
-            fetchData();
-        });
+    function params(page) {
+        const p = new URLSearchParams(new FormData(form));
+        // An empty radio value ("All brands") means no brand filter.
+        if (!p.get('brand_id')) p.delete('brand_id');
+        p.set('page', page || 1);
+        return p;
+    }
 
-        $('select.single-select').change(function () {
-            fetchData();
-        });
+    function load(page) {
+        const p = params(page);
+        inflight?.abort();
+        inflight = new AbortController();
+        target.setAttribute('aria-busy', 'true');
 
-        $(document).on('click', '.pagination a', function (e) {
+        fetch(form.action + '?' + p.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' },
+            signal: inflight.signal,
+        })
+            .then((res) => { if (!res.ok) throw new Error(res.status); return res.text(); })
+            .then((html) => {
+                target.innerHTML = html;
+                target.setAttribute('aria-busy', 'false');
+                if (p.get('page') === '1') p.delete('page');
+                history.replaceState(null, '', form.action + (p.toString() ? '?' + p : ''));
+            })
+            .catch((err) => {
+                if (err.name === 'AbortError') return;
+                target.setAttribute('aria-busy', 'false');
+                target.innerHTML = '<p class="gm-listing-results">Sorry, products could not be loaded. Please refresh the page.</p>';
+            });
+    }
+
+    function setPanel(open) {
+        panel.classList.toggle('is-open', open);
+        overlay.classList.toggle('is-open', open);
+        toggle?.setAttribute('aria-expanded', open ? 'true' : 'false');
+        document.body.style.overflow = open ? 'hidden' : '';
+    }
+
+    form.addEventListener('change', () => load(1));
+    form.addEventListener('submit', (e) => { e.preventDefault(); load(1); });
+
+    form.addEventListener('click', (e) => {
+        if (e.target.closest('[data-gm-shop-filters-open]')) { setPanel(true); return; }
+        if (e.target.closest('[data-gm-shop-filters-close]')) { setPanel(false); return; }
+        if (e.target.closest('[data-gm-clear-filters]')) {
+            form.querySelectorAll('input[type=checkbox]').forEach((i) => { i.checked = false; });
+            form.querySelectorAll('input[type=radio][value=""]').forEach((i) => { i.checked = true; });
+            form.querySelectorAll('input[type=hidden][name="cat_id[]"]').forEach((i) => i.remove());
+            load(1);
+            return;
+        }
+        const link = e.target.closest('[data-gm-shop-pagination] a[href]');
+        if (link) {
             e.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            fetchData(page);
-        });
-
-        $(document).on('click', '.filter-toggle', function () {
-            $('#gm-shop-sidebar').addClass('gm-open');
-            $('body').addClass('gm-filter-open');
-            if (!$('.gm-filter-backdrop').length) {
-                $('body').append('<div class="gm-filter-backdrop"></div>');
-            }
-        });
-
-        $(document).on('click', '.filter-close-btn, .gm-filter-backdrop', function () {
-            $('#gm-shop-sidebar').removeClass('gm-open');
-            $('body').removeClass('gm-filter-open');
-            $('.gm-filter-backdrop').remove();
-        });
-
-        // Close sidebar on mobile after selecting a filter
-        $(document).on('click', '.axil-shop-sidebar li.category a, .axil-shop-sidebar li.brand a, .axil-shop-sidebar li.size a', function () {
-            if (window.innerWidth < 992) {
-                $('#gm-shop-sidebar').removeClass('gm-open');
-                $('body').removeClass('gm-filter-open');
-                $('.gm-filter-backdrop').remove();
-            }
-        });
+            load(new URL(link.href).searchParams.get('page') || 1);
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     });
 
-    function fetchData(page) {
-        var size_id = $('li.chosen').map(function () { return $(this).data('value'); }).get();
-        var cat_id = $('li.category.current-cat').map(function () { return $(this).data('value'); }).get();
-        var brand_id = $('li.brand.current-cat').map(function () { return $(this).data('value'); }).get();
-        var q = $('input#search2').val();
-        var shorting = $('select.single-select').val();
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setPanel(false); });
 
-        $.ajax({
-            type: 'GET',
-            url: '<?php echo e(route("front.products.index")); ?>?page=' + (page || 1),
-            data: { cat_id: cat_id, size_id: size_id, q: q, shorting: shorting, brand_id: brand_id },
-            success: function (res) {
-                $('div#product_data').html(res);
-            }
-        });
-    }
+    load(new URLSearchParams(location.search).get('page') || 1);
+})();
 </script>
 <?php $__env->stopPush(); ?>
 

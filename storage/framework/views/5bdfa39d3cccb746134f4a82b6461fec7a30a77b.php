@@ -1,36 +1,80 @@
-
-
 <?php $__env->startSection('title', 'Our Story — GENTRY'); ?>
 
 <?php $__env->startSection('content'); ?>
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="<?php echo e(route('front.home')); ?>">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Our story</li>
-            </ul>
-        </div>
-    </div>
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.breadcrumb','data' => ['items' => [
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Our Story'],
+        ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.breadcrumb'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['items' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Our Story'],
+        ])]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
 
-    <section class="container-fluid">
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.section','data' => ['size' => 'xl']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.section'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['size' => 'xl']); ?>
         <div class="gm-page-hero">
             <div class="gm-page-hero-media">
                 <img src="<?php echo e(asset('sliders/mens-hero-2.jpg')); ?>" alt="The Gentry atelier" loading="lazy">
             </div>
-            <div>
+            <div class="gm-page-hero-content">
                 <span class="gm-eyebrow">Est. 2018 — Designed for everyday</span>
                 <h1><?php echo e($page && $page->title ? $page->title : 'Clothes for the life you actually live.'); ?></h1>
                 <p>GENTRY began with a simple frustration: menswear that looked good but never felt right, or felt right but never looked considered. We set out to build a wardrobe where both were true — refined enough for the room, relaxed enough for the day.</p>
-                <a href="<?php echo e(route('front.products.index')); ?>" class="gm-btn" style="margin-top:14px">Shop the collection</a>
+                <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.button','data' => ['variant' => 'primary','size' => 'lg','href' => ''.e(route('front.products.index')).'']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['variant' => 'primary','size' => 'lg','href' => ''.e(route('front.products.index')).'']); ?>Shop the collection <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
             </div>
         </div>
-    </section>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
 
-    <section class="gm-page">
-        <div class="container-fluid">
-            <div class="gm-page-narrow gm-prose">
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.section','data' => ['size' => 'lg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.section'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['size' => 'lg']); ?>
+        <div class="gm-container">
+            <div class="gm-prose gm-prose--narrow">
                 <?php if($page && $page->body): ?>
                     <?php echo $page->body; ?>
 
@@ -45,8 +89,78 @@
                 <?php endif; ?>
             </div>
         </div>
-    </section>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
+
+    <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.section','data' => ['size' => 'lg','background' => 'bg']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.section'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['size' => 'lg','background' => 'bg']); ?>
+        <div class="gm-container">
+            <div class="gm-page__header">
+                <span class="gm-eyebrow">Our promise</span>
+                <h2 class="gm-page__title">What we stand for</h2>
+                <p class="gm-page__subtitle">Four principles that guide everything we make</p>
+            </div>
+            <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.grid','data' => ['columns' => 4,'gap' => 4,'autoFit' => true,'minWidth' => 220]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('ui.grid'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['columns' => 4,'gap' => 4,'autoFit' => true,'minWidth' => 220]); ?>
+                <article class="gm-value" style="text-align: center; padding: var(--s-4);">
+                    <div class="gm-value-icon" style="width: 56px; height: 56px; margin: 0 auto var(--s-4); border-radius: 50%; background: var(--c-bg-2); display: flex; align-items: center; justify-content: center; color: var(--c-accent);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                    </div>
+                    <h3 class="gm-value-title" style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); margin: 0 0 var(--s-2);">Free delivery</h3>
+                    <p class="gm-value-text" style="color: var(--c-ink-700); margin: 0;">On orders over <?php echo e($currencySymbol ?? '৳'); ?>5,000</p>
+                </article>
+                <article class="gm-value" style="text-align: center; padding: var(--s-4);">
+                    <div class="gm-value-icon" style="width: 56px; height: 56px; margin: 0 auto var(--s-4); border-radius: 50%; background: var(--c-bg-2); display: flex; align-items: center; justify-content: center; color: var(--c-accent);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                    </div>
+                    <h3 class="gm-value-title" style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); margin: 0 0 var(--s-2);">Easy returns</h3>
+                    <p class="gm-value-text" style="color: var(--c-ink-700); margin: 0;">14 days, no questions</p>
+                </article>
+                <article class="gm-value" style="text-align: center; padding: var(--s-4);">
+                    <div class="gm-value-icon" style="width: 56px; height: 56px; margin: 0 auto var(--s-4); border-radius: 50%; background: var(--c-bg-2); display: flex; align-items: center; justify-content: center; color: var(--c-accent);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+                    </div>
+                    <h3 class="gm-value-title" style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); margin: 0 0 var(--s-2);">Secure payment</h3>
+                    <p class="gm-value-text" style="color: var(--c-ink-700); margin: 0;">Trusted & encrypted</p>
+                </article>
+                <article class="gm-value" style="text-align: center; padding: var(--s-4);">
+                    <div class="gm-value-icon" style="width: 56px; height: 56px; margin: 0 auto var(--s-4); border-radius: 50%; background: var(--c-bg-2); display: flex; align-items: center; justify-content: center; color: var(--c-accent);">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                    </div>
+                    <h3 class="gm-value-title" style="font-size: var(--t-lg); font-weight: 500; font-family: var(--f-display); margin: 0 0 var(--s-2);">Support</h3>
+                    <p class="gm-value-text" style="color: var(--c-ink-700); margin: 0;">Mon–Fri, 9–6</p>
+                </article>
+             <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
+        </div>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
+<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
+<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
+<?php endif; ?>
 </main>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('frontend.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/frontend/about_us.blade.php ENDPATH**/ ?>

@@ -4,7 +4,6 @@
     'position' => 'right',
     'title' => null,
     'closeable' => true,
-    'onClose' => null,
 ])
 
 <?php
@@ -14,31 +13,32 @@ $classes = ['gm-drawer', "gm-drawer--{$position}"];
 if ($open) $classes[] = 'gm-drawer--open';
 ?>
 
+{{--
+    Open with any element carrying data-gm-open="{{ drawer id }}", or by
+    dispatching window event `gm:open-drawer` with detail.id = drawer or overlay id.
+    Closes on the X button, an overlay click, Escape, or `gm:close-drawer`.
+--}}
 <div
     id="{{ $overlayId }}"
-    class="gm-drawer-overlay"
+    class="gm-drawer-overlay @if($open) gm-drawer--open @endif"
     aria-hidden="true"
-    {{ $attributes->merge(['wire:click.self' => '$dispatch("close-drawer", { id: "'.$overlayId.'" })']) }}
+    data-gm-overlay-for="{{ $drawerId }}"
 ></div>
 
 <aside
     id="{{ $drawerId }}"
-    class="{{ implode(' ', $classes) }}"
+    {{ $attributes->merge(['class' => implode(' ', $classes)]) }}
     role="dialog"
     aria-modal="true"
-    aria-labelledby="{{ $drawerId }}-title"
+    @if($title) aria-labelledby="{{ $drawerId }}-title" @endif
+    data-gm-drawer
 >
     <div class="gm-drawer__header">
         @if($title)
             <h2 id="{{ $drawerId }}-title" class="gm-drawer__title">{{ $title }}</h2>
         @endif
         @if($closeable)
-            <button
-                type="button"
-                class="gm-drawer__close"
-                @if($onClose) wire:click="{{ $onClose }}" @else wire:click="$dispatch('close-drawer', { id: '{{ $overlayId }}' })" @endif
-                aria-label="Close"
-            >
+            <button type="button" class="gm-drawer__close" data-gm-close aria-label="Close">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
         @endif
@@ -46,59 +46,9 @@ if ($open) $classes[] = 'gm-drawer--open';
     <div class="gm-drawer__body">
         {{ $slot }}
     </div>
-    @if($attributes->has('footer'))
+    @isset($footer)
         <div class="gm-drawer__footer">
-            {{ $attributes->get('footer') }}
+            {{ $footer }}
         </div>
-    @endif
+    @endisset
 </aside>
-
-@push('scripts')
-<script>
-    (function() {
-        const overlay = document.getElementById('{{ $overlayId }}');
-        const drawer = document.getElementById('{{ $drawerId }}');
-        if (!overlay || !drawer) return;
-
-        function close() {
-            overlay.classList.add('gm-drawer--closing');
-            overlay.classList.remove('gm-drawer--open');
-            drawer.classList.add('gm-drawer--closing');
-            drawer.classList.remove('gm-drawer--open');
-            setTimeout(() => {
-                overlay.classList.remove('gm-drawer--closing');
-                drawer.classList.remove('gm-drawer--closing');
-                @if($onClose)
-                    @this->dispatch('close-drawer', ['id' => $overlayId])
-                @endif
-            }, 200);
-        }
-
-        function handleKeydown(e) {
-            if (e.key === 'Escape') close();
-        }
-
-        @if($open)
-            overlay.classList.add('gm-drawer--open');
-            drawer.classList.add('gm-drawer--open');
-            document.addEventListener('keydown', handleKeydown);
-            document.body.style.overflow = 'hidden';
-        @endif
-
-        window.addEventListener('gm:close-drawer', function(e) {
-            if (e.detail.id === '{{ $overlayId }}') close();
-        });
-
-        window.addEventListener('gm:open-drawer', function(e) {
-            if (e.detail.id === '{{ $overlayId }}') {
-                overlay.classList.add('gm-drawer--open');
-                drawer.classList.add('gm-drawer--open');
-                overlay.classList.remove('gm-drawer--closing');
-                drawer.classList.remove('gm-drawer--closing');
-                document.addEventListener('keydown', handleKeydown);
-                document.body.style.overflow = 'hidden';
-            }
-        });
-    })();
-</script>
-@endpush

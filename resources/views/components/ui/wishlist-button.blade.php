@@ -19,7 +19,6 @@ $heartIcon = '<svg class="gm-wishlist-button__icon" viewBox="0 0 24 24" fill="' 
 <button
     type="button"
     {{ $attributes->merge(['class' => $class, 'data-tooltip' => $tooltip]) }}
-    @if($onToggle) wire:click="{{ $onToggle }}" @endif
     aria-label="{{ $tooltip }}"
     aria-pressed="{{ $active ? 'true' : 'false' }}"
 >

@@ -79,7 +79,7 @@ img { max-width: 100%; height: auto; }
 /* --------------------------------------------------------------------------
    Buttons
    -------------------------------------------------------------------------- */
-.gm-btn,
+/* .gm-btn is owned by the new design system (resources/scss/components/_button.scss) */
 .axil-btn,
 .btn.btn-primary,
 .btn.btn-dark,
@@ -104,7 +104,6 @@ button.axil-btn {
     transition: background .25s ease, color .25s ease, border-color .25s ease, transform .25s ease;
 }
 
-.gm-btn:hover,
 .axil-btn:hover,
 .btn.btn-primary:hover,
 .btn.btn-dark:hover,
@@ -115,7 +114,7 @@ button.axil-btn:hover {
     transform: translateY(-1px);
 }
 
-.gm-btn::before, .axil-btn::before { display: none !important; content: none !important; }
+.axil-btn::before { display: none !important; content: none !important; }
 
 .gm-btn--light {
     background: transparent;
@@ -126,17 +125,6 @@ button.axil-btn:hover {
     background: #fff;
     border-color: #fff;
     color: var(--gm-ink) !important;
-}
-
-.gm-btn--ghost {
-    background: transparent;
-    border-color: var(--gm-ink);
-    color: var(--gm-ink) !important;
-}
-.gm-btn--ghost:hover {
-    background: var(--gm-ink);
-    border-color: var(--gm-ink);
-    color: #fff !important;
 }
 
 .gm-btn--block { width: 100%; }
@@ -1562,20 +1550,7 @@ body.gm-drawer-open .gm-drawer-overlay { opacity: 1; visibility: visible; }
 }
 .gm-form input:focus, .gm-form textarea:focus { border-color: var(--gm-ink); }
 
-.gm-faq { max-width: 900px; margin: 0 auto; }
-.gm-faq .accordion-item { border: 0; border-bottom: 1px solid var(--gm-line); background: transparent; }
-.gm-faq .accordion-button {
-    padding: 24px 0;
-    background: transparent !important;
-    box-shadow: none !important;
-    font-family: var(--gm-display);
-    font-size: 20px !important;
-    font-weight: 400;
-    color: var(--gm-ink) !important;
-}
-.gm-faq .accordion-button:not(.collapsed) { color: var(--gm-accent) !important; }
-.gm-faq .accordion-button::after { width: 14px; height: 14px; background-size: 14px; }
-.gm-faq .accordion-body { padding: 0 0 26px; color: var(--gm-muted); font-size: 15px; font-weight: 300; line-height: 1.8; }
+/* .gm-faq is owned by the new design system (frontend/faq.blade.php + components/ui/accordion) */
 
 @media (max-width: 991px) {
     .gm-page-hero { grid-template-columns: 1fr; gap: 28px; padding-top: 40px; }

@@ -1,105 +1,38 @@
 @props([
-    'variant' => 'underline',
+    'labels' => [],
     'active' => 0,
-    'onChange' => null,
+    'variant' => 'underline',
 ])
 
-<?php
-$tabsId = 'gm-tabs-' . uniqid();
-$tabs = [];
-$panels = [];
+{{--
+    Usage:
+        <x-ui.tabs :labels="['Description', 'Reviews (3)']">
+            <div data-gm-tab-panel> ... </div>
+            <div data-gm-tab-panel> ... </div>
+        </x-ui.tabs>
 
-$slotHtml = $slot->toHtml();
-$dom = new DOMDocument();
-libxml_use_internal_errors(true);
-$dom->loadHTML('<div>' . $slotHtml . '</div>', LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-libxml_clear_errors();
+    One [data-gm-tab-panel] child per label, in the same order. Switching is
+    handled by resources/js/ui.js; without JS every panel stays visible.
+--}}
+@php
+    $tabsId = 'gm-tabs-' . uniqid();
+@endphp
 
-$xpath = new DOMXPath($dom);
-$tabItems = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' gm-tab ')]");
-$panelItems = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' gm-tab-panel ')]");
-
-foreach ($tabItems as $index => $tab) {
-    $tabs[] = [
-        'label' => trim($tab->textContent),
-        'disabled' => $tab->hasAttribute('disabled'),
-        'attributes' => [],
-    ];
-    foreach ($tab->attributes as $attr) {
-        $tabs[$index]['attributes'][$attr->name] = $attr->value;
-    }
-}
-
-foreach ($panelItems as $index => $panel) {
-    $panels[] = [
-        'content' => $dom->saveHTML($panel),
-        'attributes' => [],
-    ];
-    foreach ($panel->attributes as $attr) {
-        $panels[$index]['attributes'][$attr->name] = $attr->value;
-    }
-}
-?>
-
-<div {{ $attributes->merge(['class' => 'gm-tabs', 'data-gm-tabs' => '']) }}>
-    <div
-        class="gm-tabs__list {{ $variant === 'pill' ? 'gm-tabs__list--pill' : '' }}"
-        role="tablist"
-        aria-orientation="horizontal"
-    >
-        @foreach($tabs as $index => $tab)
+<div {{ $attributes->merge(['class' => 'gm-tabs']) }} id="{{ $tabsId }}" data-gm-tabs data-gm-active="{{ (int) $active }}">
+    <div class="gm-tabs__list {{ $variant === 'pill' ? 'gm-tabs__list--pill' : '' }}" role="tablist" aria-orientation="horizontal">
+        @foreach($labels as $index => $label)
             <button
                 type="button"
                 role="tab"
                 id="{{ $tabsId }}-tab-{{ $index }}"
-                class="gm-tabs__trigger{{ $index === $active ? ' gm-tabs__trigger--active' : '' }}{{ $tab['disabled'] ? ' gm-tabs__trigger--disabled' : '' }}"
-                aria-selected="{{ $index === $active ? 'true' : 'false' }}"
+                class="gm-tabs__trigger {{ $index === (int) $active ? 'gm-tabs__trigger--active' : '' }}"
+                aria-selected="{{ $index === (int) $active ? 'true' : 'false' }}"
                 aria-controls="{{ $tabsId }}-panel-{{ $index }}"
-                {{ $tab['disabled'] ? 'disabled' : '' }}
-                @if($onChange) wire:click="$dispatch('tab-change', { index: {{ $index }} })" @endif
-            >
-                {{ $tab['label'] }}
-            </button>
+                tabindex="{{ $index === (int) $active ? '0' : '-1' }}"
+                data-gm-tab="{{ $index }}"
+            >{{ $label }}</button>
         @endforeach
     </div>
 
-    @foreach($panels as $index => $panel)
-        <div
-            id="{{ $tabsId }}-panel-{{ $index }}"
-            role="tabpanel"
-            aria-labelledby="{{ $tabsId }}-tab-{{ $index }}"
-            class="gm-tabs__panel"
-            {{ $index === $active ? '' : 'hidden' }}
-        >
-            {!! $panel['content'] !!}
-        </div>
-    @endforeach
+    {{ $slot }}
 </div>
-
-@push('scripts')
-<script>
-    (function() {
-        const container = document.currentScript?.previousElementSibling;
-        if (!container) return;
-
-        const triggers = container.querySelectorAll('.gm-tabs__trigger');
-        const panels = container.querySelectorAll('.gm-tabs__panel');
-
-        triggers.forEach((trigger, index) => {
-            trigger.addEventListener('click', () => {
-                if (trigger.disabled) return;
-
-                triggers.forEach(t => {
-                    t.setAttribute('aria-selected', 'false');
-                    t.classList.remove('gm-tabs__trigger--active');
-                });
-                panels.forEach(p => p.hidden = true);
-
-                trigger.setAttribute('aria-selected', 'true');
-                trigger.classList.add('gm-tabs__trigger--active');
-                panels[index].hidden = false;
-            });
-        });
-    })();
-</script>
-@endpush

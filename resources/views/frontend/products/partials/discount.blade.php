@@ -1,14 +1,25 @@
-<div class="row row--15">
-    @forelse($items as $product)
-    <div class="col-lg-3 col-md-4 col-sm-6 col-6 mb--30">
-        @include('frontend.products.partials.product_section')
-    </div>
-    @empty
-    <div class="col-12">
-        <div class="alert alert-warning" style="border-radius:0">There are no sale pieces right now. Check back soon.</div>
-    </div>
-    @endforelse
-</div>
-<div class="text-center pt--20">
-    <div class="pagination-wrap">{!! urldecode(str_replace("/?","?",$items->appends(Request::all())->render())) !!}</div>
-</div>
+{{--
+    AJAX fragment for the Sale page. Rendered by Frontend\ProductController@discountProduct
+    and returned as JSON {html}; receives $items (a paginator of discounted products).
+--}}
+@if($items->count())
+    <x-ui.product-grid>
+        @foreach($items as $product)
+            @include('frontend.products.partials.card', ['product' => $product])
+        @endforeach
+    </x-ui.product-grid>
+
+    @if($items->hasPages())
+        <nav class="gm-pagination-wrapper" aria-label="Sale pages">
+            {!! $items->links() !!}
+        </nav>
+    @endif
+@else
+    <x-ui.empty-state
+        type="search"
+        title="No sale pieces right now"
+        message="Check back soon, or browse the full collection."
+        action="Shop all"
+        :actionUrl="route('front.products.index')"
+    />
+@endif

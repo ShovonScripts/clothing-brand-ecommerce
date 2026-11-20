@@ -1,0 +1,228 @@
+// Customer account pages — frontend/dashboard/orders.blade.php, show.blade.php
+
+.gm-dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-6);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .gm-dashboard-layout {
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: var(--s-7);
+  }
+
+  .gm-dashboard-sidebar {
+    position: sticky;
+    top: var(--s-6);
+  }
+}
+
+.gm-dashboard-nav-item.active {
+  background: var(--c-bg-2);
+}
+
+// ---- Order detail (dashboard/show) ---------------------------------------
+
+.gm-order-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  margin-bottom: var(--s-6);
+}
+
+.gm-order-head__title {
+  margin: 0 0 var(--s-1);
+  font-family: var(--f-display);
+  font-size: var(--t-2xl);
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-order-head__meta {
+  margin: 0;
+  color: var(--c-ink-500);
+}
+
+.gm-order-head__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+}
+
+.gm-order-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--s-5);
+  margin-bottom: var(--s-5);
+}
+
+@media (min-width: 1024px) {
+  .gm-order-grid {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+
+  .gm-order-grid--even {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gm-order-card {
+  padding: var(--s-5);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+}
+
+.gm-order-card__title {
+  margin: 0 0 var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--c-line);
+  font-family: var(--f-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-order-card__subtitle {
+  margin: var(--s-5) 0 var(--s-2);
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-order-card__text {
+  margin: 0;
+  color: var(--c-ink-700);
+  line-height: var(--lh-loose);
+
+  &--muted {
+    font-size: var(--t-sm);
+    color: var(--c-ink-500);
+  }
+}
+
+.gm-order-line {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: var(--s-3);
+  align-items: center;
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--c-line);
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.gm-order-line__image {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--c-bg-2);
+  border-radius: var(--r-md);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.gm-order-line__name {
+  margin: 0 0 var(--s-1);
+  font-weight: 500;
+  color: var(--c-ink-900);
+}
+
+.gm-order-line__meta {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+}
+
+.gm-order-line__total {
+  margin: 0;
+  font-weight: 600;
+  color: var(--c-ink-900);
+  white-space: nowrap;
+}
+
+.gm-order-totals {
+  margin: 0;
+
+  > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--s-3);
+    padding: var(--s-1) 0;
+    color: var(--c-ink-700);
+  }
+
+  dt {
+    font-weight: 400;
+  }
+
+  dd {
+    margin: 0;
+    font-weight: 500;
+  }
+}
+
+.gm-order-totals > .gm-order-totals__total {
+  margin-top: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--c-line);
+  font-size: var(--t-lg);
+  color: var(--c-ink-900);
+}
+
+.gm-order-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gm-order-steps__item {
+  position: relative;
+  padding: 0 0 var(--s-4) var(--s-6);
+  color: var(--c-ink-500);
+
+  // dot
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.3em;
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--c-line);
+    border-radius: var(--r-full);
+    background: var(--c-bg);
+  }
+
+  // connector
+  &:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: calc(0.3em + 14px);
+    bottom: 0;
+    width: 2px;
+    background: var(--c-line);
+  }
+
+  &.is-done {
+    color: var(--c-ink-900);
+    font-weight: 500;
+
+    &::before {
+      border-color: var(--c-ink-900);
+      background: var(--c-ink-900);
+    }
+  }
+}
