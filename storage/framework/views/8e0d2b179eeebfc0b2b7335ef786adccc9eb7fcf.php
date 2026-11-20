@@ -1,3 +1,5 @@
+
+
 <?php $__env->startSection('title', 'Shopping Bag — GENTRY'); ?>
 
 <?php $__env->startSection('content'); ?>

@@ -1,30 +1,40 @@
+
+
 <?php $__env->startSection('title', $product->name . ' — GENTRY'); ?>
 
 <?php $__env->startSection('content'); ?>
 <?php
 $info = \App\Models\Information::first();
 $data = getProductInfo($product);
-$currencySymbol = match($info->currency) {
-    'BDT' => '৳',
-    'Dollar' => '$',
-    'Euro' => '€',
-    'Rupee' => '₹',
-    default => ''
-};
-$images = collect([$product->image])->merge($product->images->pluck('image')->toArray())->filter()->values();
+$images = collect([$product->image])->merge($product->images->pluck('image')->toArray())->filter()->values()
+    ->map(fn($file) => getImage('products', $file));
 $hasVariations = $product->type !== 'single' && $product->variations->count();
-$variationOptions = $hasVariations ? $product->variations->mapWithKeys(function($v) {
+$variationOptions = $hasVariations ? $product->variations->mapWithKeys(function($v) use ($product) {
     $sizeLabel = optional($v->size)->title;
     $colorLabel = optional($v->color)->name;
+    $isStockFlag = $v->is_stock ?? $product->is_stock;
+    $tracked = (int) $isStockFlag !== 0;
+    $stock = $tracked ? app(\App\Utils\Util::class)->checkProductStock($product->id, $v->id) : 99;
     return [$v->id => [
         'label' => $sizeLabel ?: $colorLabel ?: 'One size',
         'price' => $v->price,
-        'stock' => $v->is_stock ?? $product->is_stock,
+        'stock' => $stock,
+        'tracked' => $tracked,
+        'is_stock_flag' => $isStockFlag,
     ]];
 }) : [];
 $firstVariation = $hasVariations ? $product->variations->first() : null;
 $selectedVariationId = $firstVariation?->id ?? ($product->variation->id ?? '');
-$maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) : $product->is_stock;
+$selectedVariation = $variationOptions[$selectedVariationId] ?? null;
+$isStockFlag = $selectedVariation['is_stock_flag'] ?? $product->is_stock;
+$tracked = (int) $isStockFlag !== 0;
+if ($selectedVariation) {
+    $maxStock = $selectedVariation['stock'];
+} elseif ($tracked) {
+    $maxStock = app(\App\Utils\Util::class)->checkProductStock($product->id, $selectedVariationId);
+} else {
+    $maxStock = 99;
+}
 ?>
 
 <main class="main-wrapper">
@@ -61,10 +71,10 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
 <?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
 <?php endif; ?>
 <?php $component->withAttributes(['size' => 'md']); ?>
-        <div class="gm-pdp-layout" style="display: grid; grid-template-columns: 1fr 480px; gap: var(--s-8); align-items: start;">
+        <div class="gm-pdp-layout">
 
             
-            <div class="gm-pdp-gallery" style="position: sticky; top: calc(var(--header-h) + var(--s-4));">
+            <div class="gm-pdp-gallery">
                 <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
 <?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.gallery','data' => ['images' => $images->toArray()]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
 <?php $component->withName('ui.gallery'); ?>
@@ -83,7 +93,7 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
             </div>
 
             
-            <div class="gm-pdp-info" style="padding-inline-start: var(--s-6);">
+            <div class="gm-pdp-info">
                 <div class="gm-pdp-meta" style="display: flex; flex-wrap: wrap; gap: var(--s-2); margin-bottom: var(--s-2); font-size: var(--t-sm);">
                     <?php if($product->category): ?>
                         <span class="gm-pdp-category" style="color: var(--c-accent); font-weight: 500; text-transform: uppercase; letter-spacing: var(--ls-wide);"><?php echo e($product->category->name); ?></span>
@@ -125,40 +135,24 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                     </ul>
                 <?php endif; ?>
 
-                <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-pdp-form">
+                <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-pdp-form gm-quick-add">
                     <?php echo csrf_field(); ?>
                     <input type="hidden" name="product_id" value="<?php echo e($product->id); ?>">
-                    <input type="hidden" name="price" :value="$data['price']">
-                    <input type="hidden" name="is_stock" value="<?php echo e($maxStock); ?>">
-                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="is_stock" value="<?php echo e($isStockFlag); ?>">
 
                     <?php if($hasVariations): ?>
-                        <div class="gm-pdp-variations" style="margin-bottom: var(--s-4);">
-                            <?php $__currentLoopData = $variationOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $variationId => $variation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <?php
-                                    $isSelected = $variationId == $selectedVariationId;
-                                ?>
-                                <input type="radio"
-                                    name="variation_id"
-                                    value="<?php echo e($variationId); ?>"
-                                    id="variation_<?php echo e($variationId); ?>"
-                                    class="gm-variant-swatch__input"
-                                    <?php if($isSelected): ?> checked <?php endif; ?>
-                                    <?php if($variation['stock'] <= 0): ?> disabled <?php endif; ?>
-                                >
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
-                            <div class="gm-variant-swatch-group" style="margin-top: var(--s-3);" role="radiogroup" aria-label="Size options">
+                        <div class="gm-pdp-variations">
+                            <div class="gm-variant-swatch-group" role="radiogroup" aria-label="Size options">
                                 <?php $__currentLoopData = $variationOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $variationId => $variation): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.variant-swatch','data' => ['value' => $variationId,'label' => $variation['label'],'selected' => $variationId == $selectedVariationId,'disabled' => $variation['stock'] <= 0,'size' => 'md']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.variant-swatch','data' => ['name' => 'variation_id','value' => $variationId,'label' => $variation['label'],'selected' => $variationId == $selectedVariationId,'disabled' => $variation['stock'] <= 0,'size' => 'md']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
 <?php $component->withName('ui.variant-swatch'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
 <?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variationId),'label' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variation['label']),'selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variationId == $selectedVariationId),'disabled' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variation['stock'] <= 0),'size' => 'md']); ?>
+<?php $component->withAttributes(['name' => 'variation_id','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variationId),'label' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variation['label']),'selected' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variationId == $selectedVariationId),'disabled' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($variation['stock'] <= 0),'size' => 'md']); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
@@ -172,17 +166,17 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
                         <input type="hidden" name="variation_id" value="<?php echo e($selectedVariationId); ?>">
                     <?php endif; ?>
 
-                    <div class="gm-pdp-quantity" style="display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-4);">
-                        <label for="pdp-qty" class="gm-qty-label" style="font-size: var(--t-xs); font-weight: 500; letter-spacing: var(--ls-wide); text-transform: uppercase; color: var(--c-ink-900); white-space: nowrap;">Quantity</label>
+                    <div class="gm-pdp-quantity">
+                        <label for="pdp-qty" class="gm-qty-label">Quantity</label>
                         <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.quantity-stepper','data' => ['name' => 'quantity','value' => $quantity ?? 1,'min' => 1,'max' => $maxStock,'stock' => $maxStock,'size' => 'md','inline' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.quantity-stepper','data' => ['name' => 'quantity','id' => 'pdp-qty','value' => 1,'min' => 1,'max' => $maxStock,'stock' => $maxStock,'size' => 'md','inline' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
 <?php $component->withName('ui.quantity-stepper'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
 <?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['name' => 'quantity','value' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($quantity ?? 1),'min' => 1,'max' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($maxStock),'stock' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($maxStock),'size' => 'md','inline' => true]); ?>
+<?php $component->withAttributes(['name' => 'quantity','id' => 'pdp-qty','value' => 1,'min' => 1,'max' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($maxStock),'stock' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($maxStock),'size' => 'md','inline' => true]); ?>
 <?php echo $__env->renderComponent(); ?>
 <?php endif; ?>
 <?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
@@ -191,17 +185,17 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
 <?php endif; ?>
                     </div>
 
-                    <div class="gm-pdp-actions" style="display: flex; flex-direction: column; gap: var(--s-3);">
+                    <div class="gm-pdp-actions">
                         <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.button','data' => ['variant' => 'primary','size' => 'lg','full' => true,'type' => 'submit','disabled' => $maxStock <= 0]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.button','data' => ['variant' => 'primary','size' => 'lg','full' => true,'type' => 'submit','disabled' => $tracked && $maxStock <= 0]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
 <?php $component->withName('ui.button'); ?>
 <?php if ($component->shouldRender()): ?>
 <?php $__env->startComponent($component->resolveView(), $component->data()); ?>
 <?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
 <?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
 <?php endif; ?>
-<?php $component->withAttributes(['variant' => 'primary','size' => 'lg','full' => true,'type' => 'submit','disabled' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($maxStock <= 0)]); ?>
-                            <?php if($maxStock <= 0): ?>
+<?php $component->withAttributes(['variant' => 'primary','size' => 'lg','full' => true,'type' => 'submit','disabled' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($tracked && $maxStock <= 0)]); ?>
+                            <?php if($tracked && $maxStock <= 0): ?>
                                 Out of Stock
                             <?php else: ?>
                                 Add to Bag
@@ -212,42 +206,21 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
 <?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
 <?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
 <?php endif; ?>
-
-                        <?php if(auth()->guard()->check()): ?>
-                            <?php if (isset($component)) { $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4 = $component; } ?>
-<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.ui.button','data' => ['variant' => 'ghost','size' => 'md','full' => true,'active' => $product->in_wishlist ?? false]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
-<?php $component->withName('ui.button'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
-<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
-<?php endif; ?>
-<?php $component->withAttributes(['variant' => 'ghost','size' => 'md','full' => true,'active' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute($product->in_wishlist ?? false)]); ?>
-                                Save for later
-                             <?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4)): ?>
-<?php $component = $__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4; ?>
-<?php unset($__componentOriginalc254754b9d5db91d5165876f9d051922ca0066f4); ?>
-<?php endif; ?>
-                        <?php else: ?>
-                            <a href="<?php echo e(route('login')); ?>" class="gm-btn gm-btn--ghost gm-btn--md gm-btn--full" style="text-align: center;">Sign in to save</a>
-                        <?php endif; ?>
                     </div>
                 </form>
 
                 
-                <div class="gm-pdp-delivery" style="display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); padding-top: var(--s-4); border-top: 1px solid var(--c-line); margin-top: var(--s-4);">
-                    <div class="gm-pdp-delivery-item" style="display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-sm); color: var(--c-ink-700);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--c-accent);"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                        <span>Free delivery over <?php echo e($currencySymbol); ?> 5,000</span>
+                <div class="gm-pdp-delivery">
+                    <div class="gm-pdp-delivery-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
+                        <span>Delivery charge is calculated at checkout</span>
                     </div>
-                    <div class="gm-pdp-delivery-item" style="display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-sm); color: var(--c-ink-700);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--c-accent);"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
-                        <span>14-day easy returns</span>
+                    <div class="gm-pdp-delivery-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                        <a href="<?php echo e(route('front.returnPolicy')); ?>">Returns &amp; exchanges</a>
                     </div>
-                    <div class="gm-pdp-delivery-item" style="display: inline-flex; align-items: center; gap: var(--s-2); font-size: var(--t-sm); color: var(--c-ink-700);">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--c-accent);"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg>
+                    <div class="gm-pdp-delivery-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="2"></rect><line x1="2" y1="12" x2="22" y2="12"></line></svg>
                         <span>Secure payment</span>
                     </div>
                 </div>
@@ -396,40 +369,38 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
 </main>
 
 
-<div class="gm-sticky-bar" id="gm-sticky-bar" style="position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; transform: translateY(100%); transition: transform var(--d-base) var(--e-out); background: var(--c-bg); box-shadow: 0 -4px 24px rgba(16,16,16,0.08); border-top: 1px solid var(--c-line);">
-    <div class="gm-sticky-bar-inner" style="display: grid; grid-template-columns: 1fr 1.5fr 1.5fr; align-items: stretch; max-width: 1280px; margin: 0 auto;">
-        <button type="button" class="gm-sticky-btn gm-sticky-btn--store" data-gm-drawer-open="cart-drawer" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: var(--s-3) var(--s-2); background: transparent; border: none; color: var(--c-ink-500); font-size: var(--t-xs); font-weight: 500; letter-spacing: var(--ls-wide); text-transform: uppercase; cursor: pointer;">
+<div class="gm-sticky-bar" id="gm-sticky-bar">
+    <div class="gm-sticky-bar__inner">
+        <button type="button" class="gm-sticky-btn gm-sticky-btn--store" data-gm-drawer-open="cart-drawer">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             <span>Bag</span>
-            <span class="gm-sticky-count" id="gm-sticky-count" style="position: absolute; top: 2px; right: 2px; min-width: 16px; height: 16px; padding: 0 4px; background: var(--c-accent); color: var(--c-accent-ink); font-size: 10px; font-weight: 600; line-height: 16px; text-align: center; border-radius: 8px;"><?php echo e(getTotalCart()); ?></span>
+            <span class="gm-sticky-count" id="gm-sticky-count"><?php echo e(getTotalCart()); ?></span>
         </button>
 
-        <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-sticky-form">
+        <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-sticky-form gm-quick-add">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo e($product->id); ?>">
-            <input type="hidden" name="price" :value="$data['price']">
-            <input type="hidden" name="is_stock" value="<?php echo e($maxStock); ?>">
+            <input type="hidden" name="is_stock" value="<?php echo e($isStockFlag); ?>">
             <input type="hidden" name="quantity" value="1">
             <?php if($hasVariations): ?>
                 <input type="hidden" name="variation_id" class="gm-sticky-variation" value="<?php echo e($selectedVariationId); ?>">
             <?php else: ?>
                 <input type="hidden" name="variation_id" value="<?php echo e($selectedVariationId); ?>">
             <?php endif; ?>
-            <button type="submit" class="gm-sticky-btn gm-sticky-btn--buy" style="background: var(--c-accent); color: var(--c-accent-ink); font-family: var(--f-body); font-size: var(--t-sm); font-weight: 500; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: var(--s-3); border: none; cursor: pointer; width: 100%; height: 100%;">Buy Now</button>
+            <button type="submit" class="gm-sticky-btn gm-sticky-btn--buy">Buy Now</button>
         </form>
 
-        <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-sticky-form">
+        <form method="POST" action="<?php echo e(route('front.carts.storeCart')); ?>" class="gm-sticky-form gm-quick-add">
             <?php echo csrf_field(); ?>
             <input type="hidden" name="product_id" value="<?php echo e($product->id); ?>">
-            <input type="hidden" name="price" :value="$data['price']">
-            <input type="hidden" name="is_stock" value="<?php echo e($maxStock); ?>">
+            <input type="hidden" name="is_stock" value="<?php echo e($isStockFlag); ?>">
             <input type="hidden" name="quantity" value="1">
             <?php if($hasVariations): ?>
                 <input type="hidden" name="variation_id" class="gm-sticky-variation" value="<?php echo e($selectedVariationId); ?>">
             <?php else: ?>
                 <input type="hidden" name="variation_id" value="<?php echo e($selectedVariationId); ?>">
             <?php endif; ?>
-            <button type="submit" class="gm-sticky-btn gm-sticky-btn--add" style="background: var(--c-ink-900); color: var(--c-bg); font-family: var(--f-body); font-size: var(--t-sm); font-weight: 500; letter-spacing: var(--ls-wide); text-transform: uppercase; padding: var(--s-3); border: none; cursor: pointer; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: var(--s-2);">
+            <button type="submit" class="gm-sticky-btn gm-sticky-btn--add">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 Add
             </button>
@@ -456,25 +427,14 @@ $maxStock = $hasVariations ? ($firstVariation?->is_stock ?? $product->is_stock) 
             }, { passive: true });
         }
 
-        // Variant change handler
-        document.addEventListener('variant-change', function(e) {
-            const { id, price, stock } = e.detail;
-            const priceEls = document.querySelectorAll('[data-gm-price]');
-            priceEls.forEach(el => {
-                el.textContent = '<?php echo e($currencySymbol); ?> ' + price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        // Keep the mobile sticky bar in sync with the selected variation.
+        document.querySelectorAll('.gm-pdp-form input[name="variation_id"]').forEach(function(radio) {
+            radio.addEventListener('change', function() {
+                if (!this.checked) return;
+                document.querySelectorAll('.gm-sticky-variation').forEach(function(input) {
+                    input.value = this.value;
+                }, this);
             });
-            document.querySelectorAll('input[name="price"]').forEach(input => input.value = price);
-            document.querySelectorAll('input[name="is_stock"]').forEach(input => input.value = stock);
-
-            const qtyInputs = document.querySelectorAll('input[name="quantity"]');
-            qtyInputs.forEach(input => {
-                input.max = stock;
-            });
-        });
-
-        // Tab change handler
-        document.addEventListener('tab-change', function(e) {
-            console.log('Tab changed to:', e.detail.index);
         });
 
         // Load related products

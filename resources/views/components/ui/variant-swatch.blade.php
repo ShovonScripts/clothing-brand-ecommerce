@@ -19,6 +19,10 @@ $style = '';
 if ($color) $style = 'style="--swatch-color: ' . e($color) . '"';
 ?>
 
+@php
+    $id = $attributes->get('id') ?? 'gm-swatch-' . uniqid();
+@endphp
+
 @if($onSelect)
     <button
         type="button"
@@ -29,25 +33,25 @@ if ($color) $style = 'style="--swatch-color: ' . e($color) . '"';
         aria-pressed="{{ $selected ? 'true' : 'false' }}"
         aria-label="{{ $label ?: $value }}"
     >
-        @if(!$color) {{ $value }} @endif
+        @if(!$color) {{ $label ?? $value }} @endif
     </button>
 @else
     <input
         type="radio"
         name="{{ $name }}"
         value="{{ $value }}"
-        id="{{ $attributes->get('id') ?? 'gm-swatch-' . uniqid() }}"
+        id="{{ $id }}"
         class="gm-variant-swatch__input"
         @if($selected) checked @endif
         @if($disabled) disabled @endif
         {{ $attributes->except(['class', 'id', 'value', 'checked', 'disabled']) }}
     >
     <label
-        for="{{ $attributes->get('id') ?? 'gm-swatch-' . uniqid() }}"
+        for="{{ $id }}"
         class="{{ implode(' ', $classes) }}"
         {{ $style }}
         {{ $attributes->except(['class', 'for', 'style']) }}
     >
-        @if(!$color) {{ $value }} @endif
+        @if(!$color) {{ $label ?? $value }} @endif
     </label>
 @endif

@@ -1,0 +1,42 @@
+<div class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5 class="modal-title" id="exampleModalLabel">Catgeory Update</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    </div>
+    <form action="<?php echo e(route('admin.categories.update',[$item->id])); ?>" method="POST" id="ajax_form">
+      <?php echo csrf_field(); ?>
+      <?php echo e(method_field('PATCH')); ?>
+
+      <div class="modal-body">
+        
+          <div class="form-group mb-3">
+              <input type="text" class="form-control" name="name" value="<?php echo e($item->name); ?>">
+          </div>
+          
+           <div class="form-group mb-3">
+                <input type="text" name="url" class="form-control" value="<?php echo e($item->url); ?>">
+            </div>
+
+          <div class="form-group mb-3">
+              <input type="file" class="form-control" name="image">
+          </div>
+
+          <div class="mb-3">
+            <label  class="form-label">Parent Category</label>
+            <select class="form-control select2" name="parent_id">
+                <option value="" hidden>Select Category ..</option>
+                <?php $__currentLoopData = $cats; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key=>$cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <option value="<?php echo e($key); ?>" <?php echo e($item->parent_id==$key); ?>><?php echo e($cat); ?></option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary"> Update</button>
+      </div>
+    </form>
+  </div>
+</div><?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views\backend\categories\edit.blade.php ENDPATH**/ ?>

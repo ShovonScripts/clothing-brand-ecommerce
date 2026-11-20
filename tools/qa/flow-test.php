@@ -78,6 +78,26 @@ try {
     check('product page renders', $s === 200, $e);
     check('product page: tabs use new component', str_contains($b, 'data-gm-tabs') && str_contains($b, 'data-gm-tab-panel'));
     check('product page: no Livewire leftovers', !str_contains($b, 'wire:') && !str_contains($b, '$dispatch'));
+    $galleryUrl = (bool) preg_match('/<img[^>]+\bsrc="(https?:\/\/[^"]+)"[^>]*gm-gallery__main-image/s', $b);
+    check('product page: gallery main image is a full URL', $galleryUrl, $galleryUrl ? '' : 'no product image URL in gallery');
+    check('product page: add-to-bag form uses AJAX handler', str_contains($b, 'gm-pdp-form gm-quick-add'));
+    // The variation the form ships with (checked radio, or hidden input for a
+    // single-type product) must be the one that lands in the bag.
+    $selectedVariation = null;
+    if (preg_match('/name="variation_id"\s+value="(\d+)"[^>]*checked/', $b, $mv)) {
+        $selectedVariation = (int) $mv[1];
+    } elseif (preg_match('/name="variation_id"[^>]*value="(\d+)"/', $b, $mv)) {
+        $selectedVariation = (int) $mv[1];
+    }
+    check('product page: a variation is available to add', $selectedVariation !== null, $selectedVariation !== null ? '' : 'no variation_id in add-to-bag form');
+    if ($selectedVariation) {
+        $productFlag = (int) App\Models\Product::find($productId)->is_stock;
+        [$sv, $sb, $se] = req('POST', '/cart/store', ['product_id' => $productId, 'variation_id' => $selectedVariation, 'quantity' => 1, 'is_stock' => $productFlag], true);
+        $sjson = json_decode($sb, true);
+        check('product page: selected variation adds to bag', $sv === 200 && ($sjson['success'] ?? false), $se ?: ($sjson['msg'] ?? ''));
+        // Remove it so the cart flow below starts from a clean bag.
+        req('DELETE', "/carts/$selectedVariation");
+    }
 
     // ---- Cart --------------------------------------------------------------
     $is_stock = (int) App\Models\Product::find($productId)->is_stock;
