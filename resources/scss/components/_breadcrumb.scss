@@ -1,0 +1,51 @@
+@use '../tokens' as *;
+
+.gm-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) 0;
+  font-size: var(--t-sm);
+}
+
+.gm-breadcrumb__list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gm-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.gm-breadcrumb__item:not(:last-child)::after {
+  content: '/';
+  color: var(--c-ink-300);
+  font-weight: 300;
+}
+
+.gm-breadcrumb__link {
+  color: var(--c-ink-500);
+  transition: color var(--d-fast) var(--e-out);
+}
+
+.gm-breadcrumb__link:hover,
+.gm-breadcrumb__link:focus {
+  color: var(--c-accent);
+}
+
+.gm-breadcrumb__current {
+  color: var(--c-ink-900);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.gm-breadcrumb--sm { font-size: var(--t-xs); }
+.gm-breadcrumb--lg { font-size: var(--t-md); }

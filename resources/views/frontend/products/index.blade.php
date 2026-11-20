@@ -3,155 +3,213 @@
 @section('title', 'Shop — GENTRY')
 
 @section('content')
+@php
+$cats = $cats ?? collect();
+$types = $types ?? collect();
+$sizes = $sizes ?? collect();
+$products = $products ?? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 12);
+$selectedCategory = request('category_id');
+$selectedBrand = request('brand_id');
+$selectedSizes = request('size_id', []);
+$sort = request('shorting', 'desc');
+$searchQuery = request('q');
+@endphp
+
 <main class="main-wrapper">
-    <div class="axil-breadcrumb-area">
-        <div class="container-fluid">
-            <ul class="axil-breadcrumb">
-                <li class="axil-breadcrumb-item"><a href="{{ route('front.home') }}">Home</a></li>
-                <li class="separator"></li>
-                <li class="axil-breadcrumb-item active" aria-current="page">Shop</li>
-            </ul>
-        </div>
-    </div>
+    <x-ui.breadcrumb
+        :items="[
+            ['label' => 'Home', 'url' => route('front.home')],
+            ['label' => 'Shop'],
+        ]"
+    />
 
-    <div class="axil-shop-area">
-        <div class="container-fluid">
-            <div class="row">
-                <div class="col-lg-3">
-                    <aside class="axil-shop-sidebar" id="gm-shop-sidebar">
-                        <div class="sidebar-header d-lg-none">
-                            <h5>Filters</h5>
-                            <button class="sidebar-close filter-close-btn" type="button" aria-label="Close filters"><i class="fas fa-times"></i></button>
-                        </div>
+    <x-ui.section size="md">
+        <div class="gm-listing-layout" style="display: grid; grid-template-columns: 280px 1fr; gap: var(--s-6);">
+            {{-- Desktop Sidebar --}}
+            <aside class="gm-filter-sidebar--desktop" aria-label="Product filters">
+                <x-ui.filter-sidebar
+                    :filters="[
+                        'category' => [
+                            'label' => 'Category',
+                            'options' => \$cats->map(fn(\$c) => ['value' => \$c->id, 'label' => \$c->name, 'count' => \$c->products_count ?? 0])->toArray(),
+                        ],
+                        'brand' => [
+                            'label' => 'Brand',
+                            'options' => \$types->map(fn(\$t) => ['value' => \$t->id, 'label' => \$t->name])->toArray(),
+                        ],
+                        'size' => [
+                            'label' => 'Size',
+                            'options' => \$sizes->map(fn(\$s) => ['value' => \$s->id, 'label' => \$s->title])->toArray(),
+                        ],
+                    ]"
+                    :selectedFilters="[
+                        'category' => \$selectedCategory ? [\$selectedCategory] : [],
+                        'brand' => \$selectedBrand ? [\$selectedBrand] : [],
+                        'size' => \$selectedSizes,
+                    ]"
+                    :onFilterChange="true"
+                    drawer="false"
+                />
+            </aside>
 
-                        <div class="toggle-list product-categories active">
-                            <h6 class="title">Category</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    @foreach($cats as $cat)
-                                    <li class="category {{ request('category_id') == $cat->id ? 'current-cat' : '' }}" data-value="{{ $cat->id }}"><a>{{ $cat->name }}</a></li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
+            {{-- Product List --}}
+            <div class="gm-listing-main">
+                <div class="gm-listing-toolbar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--s-3); margin-bottom: var(--s-5); padding-bottom: var(--s-3); border-bottom: 1px solid var(--c-line);">
+                    <p class="gm-listing-results" style="margin: 0; font-size: var(--t-sm); color: var(--c-ink-500);">
+                        {{ \$products->total() }} product{{ \$products->total() !== 1 ? 's' : '' }} found
+                    </p>
 
-                        @if($types->count())
-                        <div class="toggle-list product-categories active">
-                            <h6 class="title">Brand</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    @foreach($types as $type)
-                                    <li class="brand {{ request('brand_id') == $type->id ? 'current-cat' : '' }}" data-value="{{ $type->id }}"><a>{{ $type->name }}</a></li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-                        @endif
+                    <div class="gm-listing-controls" style="display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;">
+                        <button type="button" class="gm-btn gm-btn--ghost gm-btn--sm d-lg-none" data-gm-drawer-open="filter-drawer">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                            Filters
+                        </button>
 
-                        <div class="toggle-list product-size active">
-                            <h6 class="title">Size</h6>
-                            <div class="shop-submenu">
-                                <ul>
-                                    @foreach($sizes as $size)
-                                    <li class="size" data-value="{{ $size->id }}"><a>{{ $size->title }}</a></li>
-                                    @endforeach
-                                </ul>
-                            </div>
-                        </div>
-
-                        <a href="{{ route('front.products.index') }}" class="axil-btn gm-btn--ghost">Reset filters</a>
-                    </aside>
-                </div>
-
-                <div class="col-lg-9 products-block">
-                    <div class="axil-shop-top">
-                        <div class="d-flex align-items-center justify-content-between flex-wrap" style="gap:12px">
-                            <p class="filter-results mb-0">The full collection</p>
-                            <div class="d-flex align-items-center" style="gap:12px">
-                                <button class="product-filter-mobile filter-toggle d-lg-none" type="button"><i class="fas fa-filter"></i> Filter</button>
-                                <select class="single-select" aria-label="Sort products">
-                                    <option value="desc" selected>Newest first</option>
-                                    <option value="asc">Oldest first</option>
-                                    <option value="name">Name A–Z</option>
-                                    <option value="price_low">Price: low to high</option>
-                                    <option value="price_high">Price: high to low</option>
-                                </select>
-                            </div>
-                        </div>
+                        <x-ui.select
+                            name="shorting"
+                            :value="$sort"
+                            :options="[
+                                'desc' => 'Newest first',
+                                'asc' => 'Oldest first',
+                                'name' => 'Name A–Z',
+                                'price_low' => 'Price: low to high',
+                                'price_high' => 'Price: high to low',
+                            ]"
+                            wire:change="$dispatch('sort-change', { value: \$event.target.value })"
+                            style="min-width: 200px;"
+                        />
                     </div>
-
-                    <div class="row row--15" id="product_data"></div>
                 </div>
+
+                @if(\$products->isNotEmpty())
+                    <x-ui.product-grid>
+                        @foreach(\$products as \$product)
+                            <x-ui.product-card
+                                :product="\$product"
+                                :image="getImage('products', \$product->image)"
+                                :name="\$product->name"
+                                :price="getProductInfo(\$product)['price']"
+                                :originalPrice="getProductInfo(\$product)['discount_amount'] > 0 ? getProductInfo(\$product)['old_price'] : null"
+                                :category="optional(\$product->category)->name"
+                                :badges="getProductInfo(\$product)['discount_amount'] > 0 ? [['variant' => 'sale', 'label' => 'Sale']] : (\$product->created_at && \$product->created_at->gt(now()->subDays(30)) ? [['variant' => 'new', 'label' => 'New']] : [])"
+                                :href="route('front.products.show', [\$product->id])"
+                                :wishlistId="'wishlist_' . \$product->id"
+                            />
+                        @endforeach
+                    </x-ui.product-grid>
+
+                    {{-- Pagination --}}
+                    <div class="gm-pagination-wrapper" style="margin-top: var(--s-6);">
+                        <x-ui.pagination
+                            :currentPage="\$products->currentPage()"
+                            :lastPage="\$products->lastPage()"
+                            :total="\$products->total()"
+                            :perPage="\$products->perPage()"
+                            :onPageChange="true"
+                        />
+                    </div>
+                @else
+                    <x-ui.empty-state
+                        type="search"
+                        title="No products found"
+                        message="Try adjusting your filters or search terms."
+                        action="Clear filters"
+                        :actionUrl="route('front.products.index')"
+                    />
+                @endif
             </div>
         </div>
-    </div>
+    </x-ui.section>
+
+    {{-- Mobile Filter Drawer --}}
+    <x-ui.filter-sidebar
+        :filters="[
+            'category' => [
+                'label' => 'Category',
+                'options' => \$cats->map(fn(\$c) => ['value' => \$c->id, 'label' => \$c->name, 'count' => \$c->products_count ?? 0])->toArray(),
+            ],
+            'brand' => [
+                'label' => 'Brand',
+                'options' => \$types->map(fn(\$t) => ['value' => \$t->id, 'label' => \$t->name])->toArray(),
+            ],
+            'size' => [
+                'label' => 'Size',
+                'options' => \$sizes->map(fn(\$s) => ['value' => \$s->id, 'label' => \$s->title])->toArray(),
+            ],
+        ]"
+        :selectedFilters="[
+            'category' => \$selectedCategory ? [\$selectedCategory] : [],
+            'brand' => \$selectedBrand ? [\$selectedBrand] : [],
+            'size' => \$selectedSizes,
+        ]"
+        :onFilterChange="true"
+        drawer="true"
+        id="filter-drawer"
+    />
 </main>
 @endsection
 
 @push('js')
-<script type="text/javascript">
-    $(document).ready(function () {
-        fetchData();
-
-        $('li.category, li.brand').click(function () {
-            $(this).toggleClass('current-cat');
-            fetchData();
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sort change handler
+        document.addEventListener('sort-change', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('shorting', e.detail.value);
+            params.set('page', '1');
+            window.location.href = '{{ route("front.products.index") }}?' + params.toString();
         });
 
-        $('li.size').click(function () {
-            $(this).toggleClass('chosen');
-            fetchData();
+        // Filter toggle handler
+        document.addEventListener('toggle-filter', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            const key = e.detail.key;
+            const value = e.detail.value;
+
+            if (key === 'category' || key === 'brand') {
+                params.set(key + '_id', value);
+            } else if (key === 'size') {
+                const current = params.getAll('size_id[]');
+                const index = current.indexOf(value);
+                if (index > -1) {
+                    current.splice(index, 1);
+                    params.delete('size_id[]');
+                    current.forEach(v => params.append('size_id[]', v));
+                } else {
+                    params.append('size_id[]', value);
+                }
+            }
+            params.set('page', '1');
+            window.location.href = '{{ route("front.products.index") }}?' + params.toString();
         });
 
-        $('select.single-select').change(function () {
-            fetchData();
+        // Clear all filters
+        document.addEventListener('clear-all-filters', function() {
+            window.location.href = '{{ route("front.products.index") }}';
         });
 
-        $(document).on('click', '.pagination a', function (e) {
-            e.preventDefault();
-            var page = $(this).attr('href').split('page=')[1];
-            fetchData(page);
-        });
-
-        $(document).on('click', '.filter-toggle', function () {
-            $('#gm-shop-sidebar').addClass('gm-open');
-            $('body').addClass('gm-filter-open');
-            if (!$('.gm-filter-backdrop').length) {
-                $('body').append('<div class="gm-filter-backdrop"></div>');
+        // Apply filters in drawer
+        document.addEventListener('apply-filters', function() {
+            const drawer = document.getElementById('filter-drawer');
+            if (drawer) {
+                drawer.dispatchEvent(new CustomEvent('gm:close-drawer', { detail: { id: 'filter-drawer-overlay' } }));
             }
         });
 
-        $(document).on('click', '.filter-close-btn, .gm-filter-backdrop', function () {
-            $('#gm-shop-sidebar').removeClass('gm-open');
-            $('body').removeClass('gm-filter-open');
-            $('.gm-filter-backdrop').remove();
+        // Close filter drawer
+        document.addEventListener('close-filter-drawer', function() {
+            const drawer = document.getElementById('filter-drawer');
+            if (drawer) {
+                drawer.dispatchEvent(new CustomEvent('gm:close-drawer', { detail: { id: 'filter-drawer-overlay' } }));
+            }
         });
 
-        // Close sidebar on mobile after selecting a filter
-        $(document).on('click', '.axil-shop-sidebar li.category a, .axil-shop-sidebar li.brand a, .axil-shop-sidebar li.size a', function () {
-            if (window.innerWidth < 992) {
-                $('#gm-shop-sidebar').removeClass('gm-open');
-                $('body').removeClass('gm-filter-open');
-                $('.gm-filter-backdrop').remove();
-            }
+        // Pagination
+        document.addEventListener('page-change', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', e.detail.page);
+            window.location.href = '{{ route("front.products.index") }}?' + params.toString();
         });
     });
-
-    function fetchData(page) {
-        var size_id = $('li.chosen').map(function () { return $(this).data('value'); }).get();
-        var cat_id = $('li.category.current-cat').map(function () { return $(this).data('value'); }).get();
-        var brand_id = $('li.brand.current-cat').map(function () { return $(this).data('value'); }).get();
-        var q = $('input#search2').val();
-        var shorting = $('select.single-select').val();
-
-        $.ajax({
-            type: 'GET',
-            url: '{{ route("front.products.index") }}?page=' + (page || 1),
-            data: { cat_id: cat_id, size_id: size_id, q: q, shorting: shorting, brand_id: brand_id },
-            success: function (res) {
-                $('div#product_data').html(res);
-            }
-        });
-    }
 </script>
 @endpush

@@ -1,0 +1,136 @@
+@props([
+    'images' => [],
+    'mainImage' => null,
+    'thumbnails' => [],
+    'aspectRatio' => '1',
+])
+
+<?php
+$mainImg = $mainImage ?? ($images[0] ?? null);
+$thumbs = $thumbnails ?: $images;
+$galleryId = 'gm-gallery-' . uniqid();
+?>
+
+<div {{ $attributes->merge(['class' => 'gm-gallery', 'id' => $galleryId]) }}>
+    <div class="gm-gallery__main" style="aspect-ratio: {{ $aspectRatio }};">
+        @if($mainImg)
+            <img
+                src="{{ $mainImg }}"
+                alt=""
+                class="gm-gallery__main-image"
+                loading="eager"
+                width="800"
+                height="800"
+            >
+        @else
+            <div class="gm-skeleton gm-skeleton--box" aria-hidden="true"></div>
+        @endif
+
+        @if(count($thumbs) > 1)
+            <button
+                type="button"
+                class="gm-gallery__zoom-trigger"
+                aria-label="Zoom image"
+                data-gm-gallery-zoom-open
+            >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            </button>
+
+            <span class="gm-gallery__swipe-hint" aria-hidden="true">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 20 12 12 20 20"></polyline></svg>
+                Swipe
+            </span>
+        @endif
+    </div>
+
+    @if(count($thumbs) > 1)
+        <div class="gm-gallery__thumbnails" role="tablist" aria-label="Product images">
+            @foreach($thumbs as $index => $thumb)
+                <button
+                    type="button"
+                    role="tab"
+                    class="gm-gallery__thumbnail {{ $index === 0 ? 'gm-gallery__thumbnail--active' : '' }}"
+                    aria-selected="{{ $index === 0 ? 'true' : 'false' }}"
+                    aria-controls="{{ $galleryId }}-panel-{{ $index }}"
+                    id="{{ $galleryId }}-tab-{{ $index }}"
+                    data-gm-gallery-thumb="{{ $index }}"
+                    style="aspect-ratio: 1;"
+                >
+                    <img src="{{ $thumb }}" alt="" class="gm-gallery__thumbnail-image" loading="lazy" width="120" height="120">
+                </button>
+            @endforeach
+        </div>
+    @endif
+</div>
+
+@push('scripts')
+<script>
+    (function() {
+        const gallery = document.getElementById('{{ $galleryId }}');
+        if (!gallery) return;
+
+        const mainImg = gallery.querySelector('.gm-gallery__main-image');
+        const thumbs = gallery.querySelectorAll('.gm-gallery__thumbnail');
+        const zoomTrigger = gallery.querySelector('[data-gm-gallery-zoom-open]');
+
+        function setMain(index) {
+            const thumb = thumbs[index];
+            if (!thumb || !mainImg) return;
+
+            const img = thumb.querySelector('img');
+            if (!img) return;
+
+            mainImg.src = img.src.replace(/\/[^/]+\.(jpg|jpeg|png|webp)$/i, '/800x800.$1');
+            mainImg.alt = img.alt;
+
+            thumbs.forEach((t, i) => {
+                t.classList.toggle('gm-gallery__thumbnail--active', i === index);
+                t.setAttribute('aria-selected', i === index);
+            });
+        }
+
+        thumbs.forEach((thumb, index) => {
+            thumb.addEventListener('click', () => setMain(index));
+            thumb.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setMain(index);
+                }
+            });
+        });
+
+        // Keyboard navigation
+        gallery.addEventListener('keydown', (e) => {
+            const active = gallery.querySelector('.gm-gallery__thumbnail--active');
+            if (!active) return;
+            const index = Array.from(thumbs).indexOf(active);
+            let newIndex = index;
+            if (e.key === 'ArrowRight') newIndex = (index + 1) % thumbs.length;
+            if (e.key === 'ArrowLeft') newIndex = (index - 1 + thumbs.length) % thumbs.length;
+            if (newIndex !== index) {
+                e.preventDefault();
+                setMain(newIndex);
+                thumbs[newIndex].focus();
+            }
+        });
+
+        // Swipe support for mobile
+        let touchStartX = 0;
+        const mainEl = gallery.querySelector('.gm-gallery__main');
+        if (mainEl) {
+            mainEl.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+            mainEl.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].clientX;
+                const diff = touchStartX - touchEndX;
+                if (Math.abs(diff) > 50) {
+                    const active = gallery.querySelector('.gm-gallery__thumbnail--active');
+                    if (!active) return;
+                    const index = Array.from(thumbs).indexOf(active);
+                    const newIndex = diff > 0 ? (index + 1) % thumbs.length : (index - 1 + thumbs.length) % thumbs.length;
+                    setMain(newIndex);
+                }
+            }, { passive: true });
+        }
+    })();
+</script>
+@endpush

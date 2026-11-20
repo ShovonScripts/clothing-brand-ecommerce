@@ -1,0 +1,112 @@
+@use '../tokens' as *;
+
+.gm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: var(--s-9) var(--s-4);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+}
+
+.gm-empty-state__icon {
+  width: 80px;
+  height: 80px;
+  margin-bottom: var(--s-4);
+  opacity: 0.4;
+  color: var(--c-ink-300);
+}
+
+.gm-empty-state__title {
+  font-size: var(--t-xl);
+  font-weight: 500;
+  font-family: var(--f-display);
+  color: var(--c-ink-900);
+  margin: 0 0 var(--s-2);
+}
+
+.gm-empty-state__message {
+  font-size: var(--t-md);
+  color: var(--c-ink-500);
+  max-width: 320px;
+  margin: 0 0 var(--s-6);
+  line-height: var(--lh-base);
+}
+
+.gm-empty-state__action {
+  display: inline-flex;
+}
+
+/* Variants */
+.gm-empty-state--cart .gm-empty-state__icon { /* cart icon */ }
+.gm-empty-state--wishlist .gm-empty-state__icon { /* heart icon */ }
+.gm-empty-state--orders .gm-empty-state__icon { /* box icon */ }
+.gm-empty-state--search .gm-empty-state__icon { /* search icon */ }
+.gm-empty-state--account .gm-empty-state__icon { /* user icon */ }
+.gm-empty-state--404 .gm-empty-state__icon { /* exclamation icon */ }
+
+.gm-empty-state--simple {
+  padding: var(--s-6) var(--s-4);
+}
+
+.gm-empty-state--simple .gm-empty-state__icon {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--s-3);
+}
+
+.gm-empty-state--simple .gm-empty-state__title {
+  font-size: var(--t-lg);
+  margin-bottom: var(--s-1);
+}
+
+.gm-empty-state--simple .gm-empty-state__message {
+  font-size: var(--t-sm);
+  margin-bottom: var(--s-4);
+}
+
+/* Inline variant (for table rows, etc.) */
+.gm-empty-state--inline {
+  padding: var(--s-6) var(--s-4);
+}
+
+.gm-empty-state--inline .gm-empty-state__icon {
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--s-2);
+}
+
+.gm-empty-state--inline .gm-empty-state__title {
+  font-size: var(--t-md);
+  margin-bottom: var(--s-1);
+}
+
+.gm-empty-state--inline .gm-empty-state__message {
+  font-size: var(--t-sm);
+  margin-bottom: var(--s-3);
+}
+
+/* Illustration variant */
+.gm-empty-state--illustrated {
+  padding: var(--s-8) var(--s-4);
+}
+
+.gm-empty-state--illustrated .gm-empty-state__icon {
+  width: 120px;
+  height: 120px;
+  margin-bottom: var(--s-5);
+  opacity: 0.6;
+}
+
+.gm-empty-state--illustrated .gm-empty-state__title {
+  font-size: var(--t-2xl);
+  margin-bottom: var(--s-3);
+}
+
+.gm-empty-state--illustrated .gm-empty-state__message {
+  font-size: var(--t-lg);
+  margin-bottom: var(--s-6);
+}

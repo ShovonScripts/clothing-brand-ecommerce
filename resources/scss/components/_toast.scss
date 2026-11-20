@@ -1,0 +1,103 @@
+@use '../tokens' as *;
+
+.gm-toast-container {
+  position: fixed;
+  inset-inline-end: var(--s-4);
+  bottom: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.gm-toast {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  min-width: 280px;
+  max-width: 400px;
+  border-radius: var(--r-md);
+  box-shadow: var(--sh-3);
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  font-size: var(--t-sm);
+  line-height: var(--lh-base);
+  pointer-events: auto;
+  animation: gm-toast-enter var(--d-base) var(--e-out);
+}
+
+.gm-toast.gm-toast--exiting {
+  animation: gm-toast-exit var(--d-fast) var(--e-out) forwards;
+}
+
+@keyframes gm-toast-enter {
+  from {
+    opacity: 0;
+    transform: translateX(100%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}
+
+@keyframes gm-toast-exit {
+  from {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%) translateY(20px);
+  }
+}
+
+.gm-toast__icon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+}
+
+.gm-toast__content { flex: 1; min-width: 0; }
+
+.gm-toast__title {
+  font-weight: 600;
+  margin-bottom: var(--s-1);
+  color: var(--c-ink-900);
+}
+
+.gm-toast__message { color: var(--c-ink-700); }
+
+.gm-toast__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  color: var(--c-ink-500);
+  opacity: 0.6;
+  transition: opacity var(--d-fast) var(--e-out), background var(--d-fast) var(--e-out);
+}
+
+.gm-toast__close:hover,
+.gm-toast__close:focus {
+  opacity: 1;
+  background: var(--c-bg-3);
+}
+
+.gm-toast__close:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.gm-toast--info { border-left: 3px solid var(--c-info); }
+.gm-toast--success { border-left: 3px solid var(--c-success); }
+.gm-toast--warn { border-left: 3px solid var(--c-warn); }
+.gm-toast--danger { border-left: 3px solid var(--c-danger); }

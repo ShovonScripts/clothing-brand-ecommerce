@@ -1,0 +1,108 @@
+@use '../tokens' as *;
+
+.gm-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-sm);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.gm-stock-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.gm-stock-badge--in-stock {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-stock-badge--low-stock {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.gm-stock-badge--out-of-stock {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+
+.gm-stock-badge--pre-order {
+  background: var(--c-info-bg);
+  color: var(--c-info);
+}
+
+/* Dot indicator variant */
+.gm-stock-badge--dot {
+  padding-inline-start: var(--s-3);
+}
+
+.gm-stock-badge--dot::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: var(--s-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: currentColor;
+}
+
+/* Card variant (for product cards) */
+.gm-stock-badge--card {
+  position: absolute;
+  top: var(--s-3);
+  left: var(--s-3);
+  z-index: 1;
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-sm);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  white-space: nowrap;
+}
+
+.gm-stock-badge--card.gm-stock-badge--in-stock {
+  background: rgba(31, 122, 77, 0.9);
+  color: var(--c-bg);
+}
+
+.gm-stock-badge--card.gm-stock-badge--low-stock {
+  background: rgba(154, 100, 0, 0.9);
+  color: var(--c-bg);
+}
+
+.gm-stock-badge--card.gm-stock-badge--out-of-stock {
+  background: rgba(179, 38, 30, 0.9);
+  color: var(--c-bg);
+}
+
+/* PDP variant */
+.gm-stock-badge--pdp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--t-sm);
+  border-radius: var(--r-md);
+}
+
+.gm-stock-badge--pdp .gm-stock-badge__icon { width: 18px; height: 18px; }
+
+/* Quantity display */
+.gm-stock-badge__quantity {
+  font-family: var(--f-display);
+  font-weight: 500;
+}

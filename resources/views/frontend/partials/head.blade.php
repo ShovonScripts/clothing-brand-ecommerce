@@ -9,7 +9,7 @@
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>@yield('title', $information->site_name) — Modern Menswear</title>
     <meta name="robots" content="index, follow" />
-    <meta name="description" content="@yield('meta_description', 'GENTRY is a modern menswear destination. Shop considered shirting, tailoring, knitwear and everyday essentials crafted for the way you live.')">
+    <meta name description" content="@yield('meta_description', 'GENTRY is a modern menswear destination. Shop considered shirting, tailoring, knitwear and everyday essentials crafted for the way you live.')">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="theme-color" content="#111111">
@@ -22,7 +22,7 @@
     <!-- CSS
     ============================================ -->
 
-    <!-- Bootstrap CSS -->
+    <!-- Vendor CSS (kept for now, will migrate to npm in Phase 2) -->
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/bootstrap.min.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/font-awesome.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/flaticon/flaticon.css')}}">
@@ -32,11 +32,14 @@
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/sal.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/magnific-popup.css')}}">
     <link rel="stylesheet" href="{{ asset('frontend/css/vendor/base.css')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/style.min.css')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/header.css?v=007')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/update.css')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/newstyle.css?v=1.1')}}">
-    <link rel="stylesheet" href="{{ asset('frontend/css/mens.css?v=1.1')}}">
+
+    <!-- Legacy CSS (loads FIRST — lowest specificity, new styles override) -->
+    <link rel="stylesheet" href="{{ asset('frontend/css/legacy.css')}}">
+
+    <!-- New design system via Vite (loads LAST — highest specificity) -->
+    @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+
+    <!-- Third-party (kept for now) -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.css">
     @stack('css')

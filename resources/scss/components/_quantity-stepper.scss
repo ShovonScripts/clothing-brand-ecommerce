@@ -1,0 +1,122 @@
+@use '../tokens' as *;
+
+.gm-quantity-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background: var(--c-bg);
+}
+
+.gm-quantity-stepper__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: var(--c-bg-2);
+  border: none;
+  color: var(--c-ink-900);
+  font-size: var(--t-lg);
+  line-height: 1;
+  transition: background var(--d-fast) var(--e-out), color var(--d-fast) var(--e-out);
+}
+
+.gm-quantity-stepper__btn:hover:not(:disabled) {
+  background: var(--c-bg-3);
+  color: var(--c-accent);
+}
+
+.gm-quantity-stepper__btn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: -2px;
+}
+
+.gm-quantity-stepper__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.gm-quantity-stepper__input {
+  width: 64px;
+  min-width: 64px;
+  height: 44px;
+  padding: 0 var(--s-3);
+  border: none;
+  border-inline-start: 1px solid var(--c-line);
+  border-inline-end: 1px solid var(--c-line);
+  background: var(--c-bg);
+  color: var(--c-ink-900);
+  font-size: var(--t-md);
+  font-weight: 500;
+  text-align: center;
+  line-height: 1;
+  -moz-appearance: textfield;
+}
+
+.gm-quantity-stepper__input::-webkit-outer-spin-button,
+.gm-quantity-stepper__input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.gm-quantity-stepper__input:focus {
+  outline: none;
+  background: var(--c-bg-2);
+}
+
+.gm-quantity-stepper__input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Sizes */
+.gm-quantity-stepper--sm .gm-quantity-stepper__btn { width: 36px; height: 36px; font-size: var(--t-md); }
+.gm-quantity-stepper--sm .gm-quantity-stepper__input { width: 52px; height: 36px; font-size: var(--t-sm); }
+
+.gm-quantity-stepper--lg .gm-quantity-stepper__btn { width: 52px; height: 52px; font-size: var(--t-xl); }
+.gm-quantity-stepper--lg .gm-quantity-stepper__input { width: 72px; height: 52px; font-size: var(--t-lg); }
+
+/* Inline variant (for cart) */
+.gm-quantity-stepper--inline {
+  border: none;
+  background: transparent;
+}
+
+.gm-quantity-stepper--inline .gm-quantity-stepper__btn {
+  background: transparent;
+  color: var(--c-ink-700);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  margin: 0 var(--s-1);
+}
+
+.gm-quantity-stepper--inline .gm-quantity-stepper__btn:hover:not(:disabled) {
+  background: var(--c-bg-2);
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.gm-quantity-stepper--inline .gm-quantity-stepper__input {
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  margin: 0 var(--s-1);
+}
+
+/* Stock limit message */
+.gm-quantity-stepper__limit {
+  display: block;
+  margin-top: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--c-ink-500);
+}
+
+.gm-quantity-stepper__limit--warning {
+  color: var(--c-warn);
+}
+
+.gm-quantity-stepper__limit--error {
+  color: var(--c-danger);
+}

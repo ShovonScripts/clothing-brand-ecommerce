@@ -1,0 +1,33 @@
+// GENTRY Backend — Admin entry point
+// Uses existing Bootstrap + Hyper/app-creative theme, only standardizes patterns
+
+@use 'tokens' as *;
+@use 'reset';
+@use 'base';
+@use 'utilities';
+
+// Re-use foundation components where applicable
+@use 'components/button';
+@use 'components/input';
+@use 'components/badge';
+@use 'components/chip';
+@use 'components/alert';
+@use 'components/modal';
+@use 'components/tabs';
+@use 'components/accordion';
+@use 'components/breadcrumb';
+@use 'components/pagination';
+@use 'components/skeleton';
+
+// Admin-specific components (Phase 5)
+// @use 'components/admin/table';
+// @use 'components/admin/filter-bar';
+// @use 'components/admin/form-row';
+// @use 'components/admin/image-uploader';
+// @use 'components/admin/save-bar';
+// @use 'components/admin/stat-card';
+// @use 'components/admin/status-pill';
+// @use 'components/admin/page-header';
+
+// Bootstrap is loaded globally via existing backend layout
+// This file only adds design tokens and standardized component styles

@@ -1,0 +1,90 @@
+@use '../tokens' as *;
+
+.gm-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-1);
+  flex-wrap: wrap;
+}
+
+.gm-pagination__list {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gm-pagination__item { display: flex; }
+
+.gm-pagination__link,
+.gm-pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-md);
+  background: var(--c-bg);
+  color: var(--c-ink-900);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  transition: all var(--d-fast) var(--e-out);
+}
+
+.gm-pagination__link:hover:not(:disabled),
+.gm-pagination__btn:hover:not(:disabled),
+.gm-pagination__link:focus:not(:disabled),
+.gm-pagination__btn:focus:not(:disabled) {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+  background: var(--c-bg-2);
+}
+
+.gm-pagination__link:focus-visible,
+.gm-pagination__btn:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.gm-pagination__link[aria-current="page"],
+.gm-pagination__btn[aria-current="page"] {
+  background: var(--c-ink-900);
+  border-color: var(--c-ink-900);
+  color: var(--c-bg);
+  cursor: default;
+}
+
+.gm-pagination__link[aria-current="page"]:hover,
+.gm-pagination__btn[aria-current="page"]:hover {
+  background: var(--c-ink-700);
+  border-color: var(--c-ink-700);
+}
+
+.gm-pagination__link:disabled,
+.gm-pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.gm-pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 44px;
+  color: var(--c-ink-300);
+}
+
+.gm-pagination__info {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--s-4);
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+}

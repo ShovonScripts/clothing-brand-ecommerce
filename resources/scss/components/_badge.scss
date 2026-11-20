@@ -1,0 +1,68 @@
+@use '../tokens' as *;
+
+.gm-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--s-2);
+  border-radius: var(--r-full);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--ls-wide);
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gm-badge--neutral {
+  background: var(--c-bg-3);
+  color: var(--c-ink-700);
+}
+
+.gm-badge--sale {
+  background: var(--c-danger);
+  color: var(--c-bg);
+}
+
+.gm-badge--new {
+  background: var(--c-accent);
+  color: var(--c-accent-ink);
+}
+
+.gm-badge--stock {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-badge--status {
+  background: var(--c-info-bg);
+  color: var(--c-info);
+}
+
+.gm-badge--outline {
+  background: transparent;
+  border: 1px solid var(--c-line);
+  color: var(--c-ink-700);
+}
+
+.gm-badge--dot {
+  position: relative;
+  padding-inline-start: var(--s-3);
+}
+
+.gm-badge--dot::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: var(--s-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-full);
+  background: currentColor;
+}
+
+.gm-badge--sm { height: 18px; font-size: 0.6875rem; }
+.gm-badge--lg { height: 24px; font-size: var(--t-sm); padding: 0 var(--s-3); }

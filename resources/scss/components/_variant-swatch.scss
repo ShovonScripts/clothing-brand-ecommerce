@@ -1,0 +1,128 @@
+@use '../tokens' as *;
+
+.gm-variant-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 40px;
+  height: 40px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-sm);
+  background: var(--c-bg);
+  color: var(--c-ink-900);
+  font-size: var(--t-sm);
+  font-weight: 500;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  cursor: pointer;
+  transition: all var(--d-fast) var(--e-out);
+}
+
+.gm-variant-swatch:hover:not(:disabled):not(.gm-variant-swatch--selected) {
+  border-color: var(--c-accent);
+  color: var(--c-accent);
+}
+
+.gm-variant-swatch:focus-visible {
+  outline: 2px solid var(--c-accent);
+  outline-offset: 2px;
+}
+
+.gm-variant-swatch--selected {
+  border-color: var(--c-ink-900);
+  background: var(--c-ink-900);
+  color: var(--c-bg);
+}
+
+.gm-variant-swatch--selected:hover {
+  border-color: var(--c-ink-700);
+  background: var(--c-ink-700);
+}
+
+.gm-variant-swatch:disabled,
+.gm-variant-swatch.gm-variant-swatch--disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  border-color: var(--c-line);
+  background: var(--c-bg-2);
+  color: var(--c-ink-300);
+}
+
+/* Color swatch (circular) */
+.gm-variant-swatch--color {
+  min-width: 36px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: var(--r-full);
+  border-width: 2px;
+}
+
+.gm-variant-swatch--color::before {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--r-full);
+  background: var(--swatch-color, transparent);
+  border: 1px solid var(--c-line);
+}
+
+.gm-variant-swatch--color.gm-variant-swatch--selected::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--c-bg);
+  border-radius: var(--r-full);
+  pointer-events: none;
+}
+
+.gm-variant-swatch--color:disabled::before,
+.gm-variant-swatch--color.gm-variant-swatch--disabled::before {
+  opacity: 0.5;
+}
+
+/* Size variants */
+.gm-variant-swatch--sm {
+  min-width: 32px;
+  height: 32px;
+  font-size: var(--t-xs);
+}
+
+.gm-variant-swatch--lg {
+  min-width: 48px;
+  height: 48px;
+  font-size: var(--t-md);
+}
+
+.gm-variant-swatch--color.gm-variant-swatch--sm { width: 28px; height: 28px; }
+.gm-variant-swatch--color.gm-variant-swatch--lg { width: 44px; height: 44px; }
+
+/* Swatch group */
+.gm-variant-swatch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+
+.gm-variant-swatch-group__label {
+  display: block;
+  font-size: var(--t-sm);
+  font-weight: 500;
+  color: var(--c-ink-900);
+  margin-bottom: var(--s-2);
+}
+
+.gm-variant-swatch-group__selected-value {
+  display: inline-block;
+  margin-inline-start: var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--c-ink-500);
+}
