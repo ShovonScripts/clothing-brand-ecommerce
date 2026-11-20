@@ -773,6 +773,11 @@ class CheckoutController extends Controller
         }
     }
 
+    public function create()
+    {
+        return redirect()->route('front.checkouts.index');
+    }
+
 }
 
 

@@ -248,5 +248,9 @@ class CartController extends Controller
     return redirect()->route('front.home');
   }
 
+  public function create()
+  {
+      return redirect()->route('front.carts.index');
+  }
 
 }

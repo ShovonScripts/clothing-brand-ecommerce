@@ -112,9 +112,9 @@
                             @foreach($product->variations as $key=>$v)
                                 <tr>
                                     <td>{{$key+1}}</td>
-                                    <td>{{$v->weight->title}}</td>
-                                    <td>{{$v->size->title}}</td>
-                                    <td>{{$v->color->name}}</td>
+                                    <td>{{$v->weight?->title}}</td>
+                                    <td>{{$v->size?->title}}</td>
+                                    <td>{{$v->color?->name}}</td>
                                     <td>{{$v->stocks->sum('quantity')}}</td>
                                 </tr>
                             @endforeach

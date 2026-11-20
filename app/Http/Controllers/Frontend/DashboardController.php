@@ -60,4 +60,9 @@ class DashboardController extends Controller
 
         return session('placed_order_id') == $order->id;
     }
+
+    public function create()
+    {
+        return redirect()->route('front.dashboard.index');
+    }
 }

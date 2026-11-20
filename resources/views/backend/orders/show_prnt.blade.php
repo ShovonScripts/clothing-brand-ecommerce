@@ -138,7 +138,7 @@
           </div>
           <div class="row mt-3 mb-3 justify-content-between">
             <div class="left-info col-lg-6">
-              <h5 class="font1 bold">{{ $product->order->note }}</h5>
+              <h5 class="font1 bold">{{ $item->note }}</h5>
             </div>
             <div class="right-info col-lg-6 row justify-content-between">
               <div class="col-6">

@@ -290,47 +290,46 @@ class OrderController extends Controller
 
     }
     
-    public function orderList()
+public function orderList()
     {
-      	if(!auth()->user()->can('order.view'))
-        {
+        if (! auth()->user()->can('order.view')) {
             abort(403, 'unauthorized');
         }
-        
-        $items=Order::with('details','details.product','payments')->whereIn('id', request('order_ids'))->get();
-        
-        
+
+        $orderIds = request('order_ids');
+        if (! is_array($orderIds) || empty($orderIds)) {
+            return response()->json(['status' => false, 'msg' => 'No orders selected']);
+        }
+
+        $items = Order::with('details', 'details.product', 'payments')
+            ->whereIn('id', $orderIds)
+            ->get();
+
         $status_array = [];
-        foreach($items as $item)
-        {
+        foreach ($items as $item) {
             $status_array[] = $item->status;
         }
-        
-        if(in_array('pending', $status_array))
-        {
-            return response()->json(['status'=>false,'msg'=>'Pending Order Found !!']);
-        } else {
-            foreach($items as $item)
-            {
-                if($item->status == 'processing')
-                {
-                    $item->status = 'on_the_way';
-                    $item->save();
-                }
+
+        if (in_array('pending', $status_array)) {
+            return response()->json(['status' => false, 'msg' => 'Pending Order Found !!']);
+        }
+
+        foreach ($items as $item) {
+            if ($item->status == 'processing') {
+                $item->status = 'on_the_way';
+                $item->save();
             }
         }
-        
-        $info=Information::first();
-      
-        $view = view('backend.orders.show', compact('items','info'))->render();        
-        return response()->json(['status'=> true, 'items'=> $items, 'info'=> $info,'view'=>$view]);
+
+        $info = Information::first();
+        $view = view('backend.orders.show', compact('items', 'info'))->render();
+        return response()->json(['status' => true, 'items' => $items, 'info' => $info, 'view' => $view]);
     }
 
     public function getOrderProduct(Request $request)
     {
 
         $data = Variation::join('products' ,'products.id','variations.product_id')
-                    ->join('weights' ,'weights.id','variations.weight_id')
                     ->join('sizes' ,'sizes.id','variations.size_id')
                     ->join('colors' ,'colors.id','variations.color_id')
                     // ->join('product_stocks' ,'product_stocks.variation_id','variations.id')
@@ -364,20 +363,22 @@ class OrderController extends Controller
     }
 
 
-    public function orderProductEntry(Request $request){ 
+public function orderProductEntry(Request $request){ 
 
-        $id=$request->id;
-        $variation=Variation::with('product')->find($id);
-       // dd($variation->price);
-        $data=getProductInfo($variation->product);
-       // dd($data);
+        $id = $request->id;
+        $variation = Variation::with('product')->find($id);
 
-        if ($variation) { 
-            $html='<tr><td><img src="/products/'.$variation->product->image.'" height="50" width="50"/></td>
-            		<td>'.$variation->product->name.'</td>
-                    <td>'.$variation->weight->title.'</td>
-                    <td>'.$variation->size->title.'</td>
-                    <td>'.$variation->color->name.'</td>
+        if (! $variation) {
+            return response()->json(['success' => false, 'msg' => 'Product Not Found !!']);
+        }
+
+        $data = getProductInfo($variation->product);
+
+        $html = '<tr><td><img src="/products/'.$variation->product->image.'" height="50" width="50"/></td>
+             		<td>'.$variation->product->name.'</td>
+                    <td>'.$variation->weight?->title.'</td>
+                    <td>'.$variation->size?->title.'</td>
+                    <td>'.$variation->color?->name.'</td>
                     <td>
                         <input class="form-control quantity" name="quantity[]" type="number" value="1" required min="1" data-qty="'.$variation->stocks->sum('quantity').'"/>
                         <input type="hidden" class="form-control" name="variation_id[]" type="number" value="'.$variation->id.'" required/>
@@ -392,21 +393,22 @@ class OrderController extends Controller
                     </td>
                     </tr> ';
 
-            return response()->json(['success'=>true,'html'=>$html]);
-        }else{
-            return response()->json(['success'=>false,'msg'=>'Product Note Found !!']);
-        }
+        return response()->json(['success' => true, 'html' => $html]);
     }
     
-    public function landingProductEntry(Request $request){
+public function landingProductEntry(Request $request){
 
-        $id=$request->id;
-        $variation=Variation::with('product')->find($id);
+        $id = $request->id;
+        $variation = Variation::with('product')->find($id);
+
+        if (! $variation) {
+            return response()->json(['success' => false, 'msg' => 'Product Not Found !!']);
+        }
+
         $pr_id = $variation->product->id;
-        $data=getProductInfo($variation->product);
+        $data = getProductInfo($variation->product);
 
-        if ($variation) {
-            $html = '<table class="table table-centered table-nowrap mb-0" id="product_table">
+        $html = '<table class="table table-centered table-nowrap mb-0" id="product_table">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Image</th>
@@ -422,9 +424,9 @@ class OrderController extends Controller
                                 </thead>
                                 <tbody id="data">
                                    <tr><td><img src="/products/'.$variation->product->image.'" height="50" width="50"/></td>
-            		<td>'.$variation->product->name.'</td>
-                    <td>'.$variation->size->title.'</td>
-                    <td>'.$variation->color->name.'</td>
+             		<td>'.$variation->product->name.'</td>
+                    <td>'.$variation->size?->title.'</td>
+                    <td>'.$variation->color?->name.'</td>
                     <td>
                         <input class="form-control quantity" name="quantity[]" type="number" value="1" required min="1" data-qty="'.$variation->stocks->sum('quantity').'"/>
                         <input type="hidden" class="form-control" name="variation_id[]" type="number" value="'.$variation->id.'" required/>
@@ -438,15 +440,13 @@ class OrderController extends Controller
                     </td>
                     </tr>
                                 </tbody>
-                            </table>';
+                        </table>';
 
 
-
-
-            $htmldfhgdf='<tr><td><img src="/products/'.$variation->product->image.'" height="50" width="50"/></td>
-            		<td>'.$variation->product->name.'</td>
-                    <td>'.$variation->size->title.'</td>
-                    <td>'.$variation->color->name.'</td>
+        $htmldfhgdf = '<tr><td><img src="/products/'.$variation->product->image.'" height="50" width="50"/></td>
+             		<td>'.$variation->product->name.'</td>
+                    <td>'.$variation->size?->title.'</td>
+                    <td>'.$variation->color?->name.'</td>
                     <td>
                         <input class="form-control quantity" name="quantity[]" type="number" value="1" required min="1" data-qty="'.$variation->stocks->sum('quantity').'"/>
                         <input type="hidden" class="form-control" name="variation_id[]" type="number" value="'.$variation->id.'" required/>
@@ -460,13 +460,10 @@ class OrderController extends Controller
                     </td>
                     </tr> ';
 
-            return response()->json(['success'=>true,'html'=>$html,'pr_id' => $pr_id]);
-        }else{
-            return response()->json(['success'=>false,'msg'=>'Product Note Found !!']);
-        }
+return response()->json(['success' => true, 'html' => $html, 'pr_id' => $pr_id]);
     }
-  
-    public function status_wise_order(Request $request){        
+   
+    public function status_wise_order(Request $request){
       	$redx_status = $request->redx_status;
       	$courier_type = $request->courier_type;
         $query = Order::whereHas('details.product', function($q){

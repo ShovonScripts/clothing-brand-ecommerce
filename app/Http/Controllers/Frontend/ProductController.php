@@ -263,11 +263,14 @@ class ProductController extends Controller
     
     public function get_variation_price(Request $request)
     {
-        $price_value = Variation::find($request->value)->price;
-        
+        $variation = Variation::find($request->value);
+        if (! $variation) {
+            return response()->json(['success' => false, 'message' => 'Variation not found'], 404);
+        }
+
         return response()->json([
             'success' => true,
-            'price'  =>  $price_value
+            'price'  => $variation->price
         ]);
     }
 
