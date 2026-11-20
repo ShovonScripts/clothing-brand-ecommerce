@@ -246,7 +246,7 @@ class CheckoutController extends Controller
 
             DB::rollback();
 
-            return response()->json(['success'=>false,'msg'=>$e->getMessage()]);
+            return response()->json(['success'=>false,'msg'=>'Something went wrong while placing your order. Please try again.']);
         }
     }
 
@@ -430,7 +430,7 @@ class CheckoutController extends Controller
             
             DB::rollback();
 
-            return response()->json(['success'=>false,'msg'=>$e->getMessage()]);
+            return response()->json(['success'=>false,'msg'=>'Something went wrong while placing your order. Please try again.']);
         }
 
     }
@@ -612,7 +612,7 @@ class CheckoutController extends Controller
 
             DB::rollback();
 
-            return response()->json(['success'=>false,'msg'=>$e->getMessage()]);
+            return response()->json(['success'=>false,'msg'=>'Something went wrong while placing your order. Please try again.']);
         }
     }
   
@@ -735,7 +735,7 @@ class CheckoutController extends Controller
               
               DB::rollback();
   
-              return response()->json(['success'=>false,'msg'=>$e->getMessage()]);
+              return response()->json(['success'=>false,'msg'=>'Something went wrong while placing your order. Please try again.']);
           }
 
         

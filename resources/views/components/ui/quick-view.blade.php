@@ -215,11 +215,7 @@ $maxStock = $hasVariations ? ($product->variations->first()?->is_stock ?? $produ
         // Close on escape
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape' && overlay.classList.contains('gm-modal-overlay--open')) {
-                @if($onClose)
-                    @this->dispatch('close-quick-view', ['id' => '{{ $overlayId }}'])
-                @else
-                    overlay.dispatchEvent(new CustomEvent('gm:close-modal', { detail: { id: '{{ $overlayId }}' } }));
-                @endif
+                overlay.dispatchEvent(new CustomEvent('gm:close-modal', { detail: { id: '{{ $overlayId }}' } }));
             }
         });
     })();
