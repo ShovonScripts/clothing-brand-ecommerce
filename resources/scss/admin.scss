@@ -19,15 +19,16 @@
 @use 'components/pagination';
 @use 'components/skeleton';
 
-// Admin-specific components (Phase 5)
-// @use 'components/admin/table';
-// @use 'components/admin/filter-bar';
-// @use 'components/admin/form-row';
-// @use 'components/admin/image-uploader';
-// @use 'components/admin/save-bar';
-// @use 'components/admin/stat-card';
-// @use 'components/admin/status-pill';
-// @use 'components/admin/page-header';
+// Admin-specific components
+@use 'components/admin/table';
+@use 'components/admin/filter-bar';
+@use 'components/admin/form-row';
+@use 'components/admin/image-uploader';
+@use 'components/admin/save-bar';
+@use 'components/admin/stat-card';
+@use 'components/admin/status-pill';
+@use 'components/admin/page-header';
+@use 'components/admin/layout';
 
 // Bootstrap is loaded globally via existing backend layout
 // This file only adds design tokens and standardized component styles

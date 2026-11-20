@@ -1,0 +1,80 @@
+@use '../../tokens' as *;
+
+.gm-admin-save-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  background: var(--c-bg);
+  border-top: 1px solid var(--c-line);
+  box-shadow: 0 -4px 20px rgba(16,16,16,0.06);
+  z-index: 50;
+  flex-wrap: wrap;
+}
+
+.gm-admin-save-bar__left {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.gm-admin-save-bar__right {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+
+.gm-admin-save-bar__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-1);
+  font-size: var(--t-xs);
+  color: var(--c-ink-500);
+}
+
+.gm-admin-save-bar__status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--c-success);
+}
+
+.gm-admin-save-bar__status-indicator--dirty {
+  background: var(--c-warn);
+}
+
+.gm-admin-save-bar__status-indicator--saving {
+  background: var(--c-accent);
+  animation: gm-pulse 1s ease-in-out infinite;
+}
+
+@keyframes gm-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.gm-admin-save-bar__btn {
+  min-width: 120px;
+}
+
+@media (max-width: 767px) {
+  .gm-admin-save-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gm-admin-save-bar__left {
+    justify-content: center;
+  }
+
+  .gm-admin-save-bar__right {
+    justify-content: center;
+  }
+
+  .gm-admin-save-bar__btn {
+    width: 100%;
+  }
+}

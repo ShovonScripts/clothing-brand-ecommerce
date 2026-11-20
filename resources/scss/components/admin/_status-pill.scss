@@ -1,0 +1,137 @@
+@use '../../tokens' as *;
+
+.gm-admin-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  padding: var(--s-1) var(--s-3);
+  border-radius: var(--r-full);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* Order status colors */
+.gm-admin-status-pill--pending {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.gm-admin-status-pill--processing {
+  background: var(--c-info-bg);
+  color: var(--c-info);
+}
+
+.gm-admin-status-pill--on-the-way,
+.gm-admin-status-pill--shipped {
+  background: #E8F0F9;
+  color: #1F5FA6;
+}
+
+.gm-admin-status-pill--on-hold {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.gm-admin-status-pill--complete,
+.gm-admin-status-pill--delivered {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-admin-status-pill--cancelled {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+
+/* Stock status */
+.gm-admin-status-pill--in-stock {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-admin-status-pill--low-stock {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.gm-admin-status-pill--out-of-stock {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+
+/* Payment status */
+.gm-admin-status-pill--paid {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-admin-status-pill--unpaid {
+  background: var(--c-warn-bg);
+  color: var(--c-warn);
+}
+
+.gm-admin-status-pill--refunded {
+  background: var(--c-info-bg);
+  color: var(--c-info);
+}
+
+.gm-admin-status-pill--failed {
+  background: var(--c-danger-bg);
+  color: var(--c-danger);
+}
+
+/* Generic statuses */
+.gm-admin-status-pill--active {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+.gm-admin-status-pill--inactive {
+  background: var(--c-bg-3);
+  color: var(--c-ink-500);
+}
+
+.gm-admin-status-pill--draft {
+  background: var(--c-bg-3);
+  color: var(--c-ink-500);
+}
+
+.gm-admin-status-pill--published {
+  background: var(--c-success-bg);
+  color: var(--c-success);
+}
+
+/* Dot variant */
+.gm-admin-status-pill--dot {
+  padding-inline-start: var(--s-3);
+}
+
+.gm-admin-status-pill--dot::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: var(--s-2);
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: currentColor;
+}
+
+/* Size variants */
+.gm-admin-status-pill--sm {
+  min-width: 70px;
+  padding: var(--s-1) var(--s-2);
+  font-size: 0.6875rem;
+}
+
+.gm-admin-status-pill--lg {
+  min-width: 100px;
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--t-sm);
+}
