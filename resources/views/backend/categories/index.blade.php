@@ -1,217 +1,181 @@
 @extends('backend.app')
+
 @section('content')
+@php
+$items = $items ?? new \Illuminate\Pagination\LengthAwarePaginator([], 0, 30);
+$searchQuery = request('q', '');
+$selectedParent = request('parent_id');
+$selectedPopular = request('is_popular');
+$categories = $categories ?? collect();
+$parentCategories = $categories->whereNull('parent_id');
+$currencySymbol = config('app.currency_symbol') ?? '৳';
+@endphp
 
-<style>
- th, td, h4, .cr_manage, .form-label {
-  	color: black !important;
-  }
-</style>
+<div class="gm-admin-page">
+    {{-- Page Header --}}
+    <x-admin.page-header
+        title="Categories"
+        subtitle="Manage product categories and hierarchy"
+        :count="$items->total()"
+    >
+        <x-slot name="breadcrumb">
+            <x-admin.page-header-breadcrumb :items="[
+                ['label' => 'Dashboard', 'url' => route('admin.dashboard')],
+                ['label' => 'Categories'],
+            ]" />
+        </x-slot>
 
-<div class="row">
-    <div class="col-12">
-        <div class="page-title-box">
-            <div class="page-title-right">
-                <ol class="breadcrumb m-0">
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">SIS</a></li>
-                    <li class="breadcrumb-item"><a href="javascript: void(0);">CRM</a></li>
-                    <li class="breadcrumb-item active cr_manage">Category Manage</li>
-                </ol>
-            </div>
-            <h4 class="page-title">Category Manage</h4>
-        </div>
-    </div>
-</div>   
-<!-- end page title --> 
-
-<div class="row">
-    <div class="p-1 col-lg-4 col-md-12 col-sm-12">
-        <div class="card">
-            <div class="card-header">
-                <h4> Category Create</h4>
-            </div>
-            <div class="card-body">
-   
+        <x-slot name="actions">
             @can('category.create')
-                <form method="POST" action="{{ route('admin.categories.store')}}" id="ajax_form">
-                    @csrf
-                    <div class="row">
-                        
-                        <div class="col-lg-12">
-                            
-                        
-                            <div class="mb-3">
-                                <label  class="form-label">Category Name</label>
-                                <input type="text" name="name" class="form-control" placeholder="Category Name">
-                            </div>
-                            
-                            <div class="mb-3">
-                                <label  class="form-label">Category Slug</label>
-                                <input type="text" name="url" class="form-control" placeholder="Category Slug">
-                            </div>
+                <a href="{{ route('admin.categories.create') }}" class="gm-btn gm-btn--primary gm-btn--sm">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    Add Category
+                </a>
+            @endcan
+        </x-slot>
+    </x-admin.page-header>
 
-                            <div class="mb-3">
-                                <label  class="form-label">Category Image</label>
-                                <input type="file" name="image" class="form-control">
-                            </div>
+    {{-- Filter Bar --}}
+    <x-admin.filter-bar
+        :filters="[
+            'parent_id' => [
+                'label' => 'Parent Category',
+                'type' => 'select',
+                'options' => \$parentCategories->map(fn(\$c) => ['value' => \$c->id, 'label' => \$c->name])->prepend(['value' => '', 'label' => 'All Categories'])->toArray(),
+            ],
+            'is_popular' => [
+                'label' => 'Popular',
+                'type' => 'select',
+                'options' => [
+                    ['value' => '', 'label' => 'All'],
+                    ['value' => '1', 'label' => 'Popular'],
+                    ['value' => '0', 'label' => 'Not Popular'],
+                ],
+            ],
+        ]"
+        :search="$searchQuery"
+        searchPlaceholder="Search categories..."
+        :onFilterChange="true"
+    />
 
-                            <div class="mb-3">
-                                <label  class="form-label">Parent Category</label>
-                                
-                                <select class="form-control select2" name="parent_id">
-                                    <option value="" hidden>Select Category ..</option>
-                                    @foreach($cats as $key=>$cat)
-                                    <option value="{{ $key}}">{{ $cat}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                        </div>
-
-                        <div class="col-lg-12">
-                            <div class="mb-3">
-                                <button type="submit" class="btn btn-primary">Save</button>
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-                @endcan
-            </div> <!-- end card-body-->
-        </div> <!-- end card-->
+    {{-- Categories Table --}}
+    <div class="gm-admin-table-wrapper" style="background: var(--c-bg); border: 1px solid var(--c-line); border-radius: var(--r-lg); overflow: hidden;">
+        @if($items->count())
+            <x-admin.table
+                :columns="[
+                    ['key' => 'checkbox', 'label' => '', 'align' => 'center', 'width' => '40px', 'render' => 'renderCheckbox'],
+                    ['key' => 'actions', 'label' => 'Action', 'align' => 'center', 'width' => '100px', 'render' => 'renderActions'],
+                    ['key' => 'image', 'label' => 'Image', 'align' => 'center', 'width' => '60px', 'render' => 'renderImage'],
+                    ['key' => 'name', 'label' => 'Name', 'align' => 'left', 'render' => 'renderName'],
+                    ['key' => 'url', 'label' => 'Slug', 'align' => 'left'],
+                    ['key' => 'parent', 'label' => 'Parent', 'align' => 'left', 'render' => 'renderParent'],
+                    ['key' => 'is_popular', 'label' => 'Popular', 'align' => 'center', 'width' => '80px', 'render' => 'renderPopular'],
+                    ['key' => 'products_count', 'label' => 'Products', 'align' => 'center', 'width' => '80px', 'render' => 'renderCount'],
+                ]"
+                :rows="$items"
+                :actions="[
+                    ['type' => 'edit', 'label' => 'Edit', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7\"></path><path d=\"M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z\"></path></svg>', 'url' => fn(\$row) => route('admin.categories.edit', \$row->id)],
+                    ['type' => 'delete', 'label' => 'Delete', 'icon' => '<svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><polyline points=\"3 6 5 6 21 6\"></polyline><path d=\"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2\"></path></svg>', 'url' => fn(\$row) => route('admin.categories.destroy', \$row->id), 'attrs' => ['onclick' => 'return confirm(\"Are you sure?\")', 'class' => 'gm-admin-table__action-btn--delete']],
+                ]"
+                :emptyMessage="No categories found"
+                striped
+                hover
+            />
+        @else
+            <x-ui.empty-state
+                type="default"
+                title="No categories yet"
+                message="Create your first category to organize products."
+                action="Add Category"
+                :actionUrl="route('admin.categories.create')"
+            />
+        @endif
     </div>
-    <div class="p-1 col-md-12 col-sm-12 col-lg-8">
-        
-        
-        <div class="card">
-            <div class="card-body">
-                <div class="col-lg-12">
-                    <div class="row">
-                        <div class="col-lg-6">
-                        
-                            <div class="col-auto">
-                                <a class=" btn btn-sm btn-info popular_update" href="{{ route('admin.popularCatgeory')}}?is_popular=1">Active Popular</a>
-                                <a class=" btn btn-sm btn-danger popular_update" href="{{ route('admin.popularCatgeory')}}?is_popular=0">De-active Popular</a>
-                            </div>
-                        </div>
-                      
-                        <div class="col-lg-6">
-                            <form class="row gy-2 gx-2 align-items-center justify-content-xl-start justify-content-between">
-                                <div class="col-auto">
-                                    <label for="inputPassword2" class="visually-hidden">Search</label>
-                                    <input type="search" class="form-control" id="inputPassword2" placeholder="Search..." name="q" value="{{ $q??''}}">
-                                </div>
-                                
-                                <div class="col-auto">
-                                    <label for="submit" class="visually-hidden">Submit</label>
-                                    <input type="submit" class="form-control btn btn-sm btn-primary" id="submit" value="Submit">
-                                    
-                                </div>
-                            </form>
-                            
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="col-lg-12 mt-4">
-        
-                    <div class="table-responsive">
-                        <table class="table table-centered mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>
-                                    
-                                        <div class="form-check">
-                                          <label class="form-check-label">
-                                            <input type="checkbox" class="form-check-input check_all" value="">Check All
-                                          </label>
-                                        </div>
-                                    </th>
-                                    <th>Category Name</th>
-                                    <th>Slug</th>
-                                    <th>Parent Category</th>
-                                    <th>Category Image</th>
-                                    <th>Popular</th>
-                                    <th style="width: 125px;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($items as $key=> $item)
-                                <tr>
-                                    <td> <input type="checkbox" class="checkbox" value="{{ $item->id}}"> </td>
-                                    <td> {{$item->name}} </td>
-                                    <td> {{$item->url}} </td>
-                                    <td> {{$item->parent?$item->parent->name:''}} </td>
-                                    <td>
-                                        <img src="{{ getImage('categories', $item->image)}}" width="120"> 
-                                    </td>
-                                    <td> {{$item->is_popular=='1'?'yes':'no'}} </td>
-                                    <td>
-                                    @can('category.edit')
-                                        <a href="{{ route('admin.categories.edit',[$item->id])}}" class="action-icon btn_modal"> 
-                                            <i class="mdi mdi-square-edit-outline"></i>
-                                        </a>
-                                    @endcan
-                                    @can('category.delete')
-                                        <a href="{{ route('admin.categories.destroy',[$item->id])}}" class="delete action-icon"> <i class="mdi mdi-delete"></i></a>
-                                    @endcan
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                  <p>{!! urldecode(str_replace("/?","?",$items->appends(Request::all())->render())) !!}</p>
-                </div>
-            </div> <!-- end card-body-->
-        </div> <!-- end card-->
-    </div> <!-- end col -->
-</div> <!-- end row -->
-@endsection 
 
-@push('js')
+    {{-- Pagination --}}
+    @if($items->count())
+        <div class="gm-pagination-wrapper" style="margin-top: var(--s-5);">
+            <x-ui.pagination
+                :currentPage="$items->currentPage()"
+                :lastPage="$items->lastPage()"
+                :total="$items->total()"
+                :perPage="$items->perPage()"
+                :onPageChange="true"
+            />
+        </div>
+    @endif
+</div>
+
+@push('scripts')
 <script>
-
-$(document).ready(function(){
-    
-    $(".check_all").on('change',function(){
-      $(".checkbox").prop('checked',$(this).is(":checked"));
-    });
-    
-    
-    $(document).on('click', 'a.popular_update', function(e){
-        e.preventDefault();
-        var url = $(this).attr('href');
-    
-        var product = $('input.checkbox:checked').map(function(){
-          return $(this).val();
-        });
-        var cat_ids=product.get();
-        
-        if(cat_ids.length ==0){
-            toastr.error('Please Select A Product First !');
-            return ;
-        }
-        
-        $.ajax({
-           type:'GET',
-           url:url,
-           data:{cat_ids},
-           success:function(res){
-               if(res.status==true){
-                toastr.success(res.msg);
-                window.location.reload();
-                
-            }else if(res.status==false){
-                toastr.error(res.msg);
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter change handler
+        document.addEventListener('filter-change', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            const key = e.detail.key;
+            const value = e.detail.value;
+            
+            if (key === 'search') {
+                if (value) params.set('q', value);
+                else params.delete('q');
+            } else {
+                if (value) params.set(key, value);
+                else params.delete(key);
             }
-           }
+            params.set('page', '1');
+            window.location.href = '{{ route("admin.categories.index") }}?' + params.toString();
         });
-    
-    })
-    
-    
-})
-    
-    
+
+        // Clear filters
+        document.addEventListener('clear-filters', function() {
+            window.location.href = '{{ route("admin.categories.index") }}';
+        });
+
+        // Pagination
+        document.addEventListener('page-change', function(e) {
+            const params = new URLSearchParams(window.location.search);
+            params.set('page', e.detail.page);
+            window.location.href = '{{ route("admin.categories.index") }}?' + params.toString();
+        });
+
+        // Checkbox handling
+        document.addEventListener('change', function(e) {
+            if (e.target.matches('.check_all')) {
+                const checkboxes = document.querySelectorAll('input[name="ids[]"]');
+                checkboxes.forEach(cb => cb.checked = e.target.checked);
+            }
+        });
+
+        // Bulk actions
+        document.addEventListener('bulk-action', function(e) {
+            const action = e.detail.action;
+            const ids = Array.from(document.querySelectorAll('input[name="ids[]"]:checked')).map(cb => cb.value);
+            
+            if (!ids.length) {
+                if (window.toastr) toastr.warning('No categories selected');
+                return;
+            }
+            
+            if (action === 'delete') {
+                if (!confirm('Delete selected categories?')) return;
+            }
+            
+            const formData = new FormData();
+            formData.append('_token', '{{ csrf_token() }}');
+            ids.forEach(id => formData.append('ids[]', id));
+            formData.append('action', action);
+            
+            fetch('{{ route("admin.categories.bulkAction") }}', { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    if (window.toastr) toastr.success(data.msg);
+                    window.location.reload();
+                } else {
+                    if (window.toastr) toastr.error(data.msg || 'Failed');
+                }
+            });
+        });
+    });
 </script>
 @endpush

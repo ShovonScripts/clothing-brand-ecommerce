@@ -159,3 +159,13 @@
 .u-text-balance {
   text-wrap: balance;
 }
+
+/* Table column width utilities */
+.u-col-action { width: 125px; }
+.u-col-sm { width: 60px; }
+.u-col-md { width: 80px; }
+.u-col-lg { width: 100px; }
+.u-col-xl { width: 120px; }
+.u-col-xxl { width: 150px; }
+.u-col-right { text-align: right; }
+.u-col-center { text-align: center; }
