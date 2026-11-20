@@ -1,1 +1,0 @@
-<?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views\backend\product_discounts\show.blade.php ENDPATH**/ ?>

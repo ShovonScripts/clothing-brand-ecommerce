@@ -1,1 +1,0 @@
-<?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/backend/social_icons/create.blade.php ENDPATH**/ ?>

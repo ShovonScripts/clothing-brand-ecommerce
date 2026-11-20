@@ -1,1 +1,0 @@
-<?php /**PATH C:\xampp\htdocs\Clothing Ecom\clothing-brand-ecommerce\resources\views/backend/career/create.blade.php ENDPATH**/ ?>
