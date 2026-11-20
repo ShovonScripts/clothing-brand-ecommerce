@@ -8,6 +8,12 @@ use App\Models\AboutUs;
 
 class AboutUsController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:about_us.view')->only(['index']);
+        $this->middleware('permission:about_us.edit')->only(['store']);
+    }
+
     public function index()
     {
         $item = AboutUs::first() ?? new AboutUs();

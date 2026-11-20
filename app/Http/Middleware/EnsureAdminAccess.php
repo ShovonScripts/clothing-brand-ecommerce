@@ -18,7 +18,7 @@ class EnsureAdminAccess
             return redirect()->route('admin.login');
         }
 
-        if ($user->hasAnyRole(['admin', 'worker', 'vendor']) || $user->can('dashboard.access')) {
+        if ($user->hasAnyRole(['admin', 'worker']) || $user->can('dashboard.access')) {
             return $next($request);
         }
 

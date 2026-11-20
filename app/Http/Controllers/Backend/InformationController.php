@@ -5,10 +5,19 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use App\Models\{Information, User};
 use Illuminate\Http\Request;
-use App\Utils\Util;
+use App\Services\UploadService;
 use Auth, Validator;
 class InformationController extends Controller{
-    
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
+    {
+        $this->middleware('permission:settings.view')->only(['index', 'showProfile']);
+        $this->middleware('permission:settings.edit')->only(['update', 'statusCoupon']);
+        $this->middleware('permission:settings.scripts')->only(['update']);
+        $this->uploadService = $uploadService;
+    }
+
     public function index()
     {
         $information = Information::first();
@@ -20,7 +29,7 @@ class InformationController extends Controller{
     {
         $data = $request->validate([
             'site_name'    => ['required'],    
-            'site_logo'     => ['max:2048'],    
+            'site_logo'     => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:512'],    
             'owner_phone'   => ['required'],    
             'owner_email'   => ['required'],    
             'address'       => ['required'],
@@ -63,22 +72,21 @@ class InformationController extends Controller{
         
         if($request->hasFile('site_logo'))
         {
-            Util::deleteFile($information->site_logo, 'img');
-            $data['site_logo'] = Util::uploadFile($request->site_logo, 'img');
+            $this->uploadService->delete($information->site_logo, 'img');
+            $data['site_logo'] = $this->uploadService->upload($request->file('site_logo'), 'img', 'logo');
         }
 
         if($request->hasFile('favicon'))
         {
-            Util::deleteFile($information->favicon, 'img');
-            $data['favicon'] = Util::uploadFile($request->favicon, 'img');
+            $this->uploadService->delete($information->favicon, 'img');
+            $data['favicon'] = $this->uploadService->upload($request->file('favicon'), 'img', 'favicon');
         }
 		
 		 if($request->hasFile('og_images'))
         {
-            Util::deleteFile($information->og_images, 'img');
-            $data['og_images'] = Util::uploadFile($request->og_images, 'img');
+            $this->uploadService->delete($information->og_images, 'img');
+            $data['og_images'] = $this->uploadService->upload($request->file('og_images'), 'img', 'og_image');
         }
-
 
 
         $information->update($data);
@@ -112,7 +120,7 @@ class InformationController extends Controller{
                 'username' => ['required', 'unique:users,username,'.$user->id],
                 'mobile' => ['required', 'unique:users,mobile,'.$user->id],
                 'business_name' => ['required'],
-                'image' => ['max:2048'],
+                'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:2048'],
             ]);
             
         $data = $request->only(['first_name', 'last_name', 'username', 'mobile', 'business_name']);
@@ -121,18 +129,17 @@ class InformationController extends Controller{
         {
             return response()->json(['errors' => $validator->errors()]);
         }
-           
+            
          if($request->hasFile('image'))
          {
-
-             Util::deleteFile($user->image, 'img');
-             $data['image'] = Util::uploadFile($request->image, 'img');
+             $this->uploadService->delete($user->image, 'img');
+             $data['image'] = $this->uploadService->upload($request->file('image'), 'img', 'default');
          }
          
          $user->update($data);
          
          return response()->json(['success' => 'Profile has been updated']);
-            
+             
     }
     
 }

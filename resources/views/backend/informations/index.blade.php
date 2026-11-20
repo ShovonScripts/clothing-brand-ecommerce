@@ -130,39 +130,26 @@
                              </p>
                             @enderror
                         </div>
+                        @can('settings.scripts')
                         <div class="col-md-6">
                             <div class="form-group">
                                 <strong for="role">Site Tracking Code</strong>
                                 <textarea name="tracking_code" id="tracking_code" rows="5" class="form-control" placeholder="Site tracking code...">{{$information->tracking_code}}</textarea>
                             </div>
-                             @error('address')
-                             <p class="text-danger">
-                                 {{$message}}
-                             </p>
-                            @enderror
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <strong for="role">Facebook Pixel Setup Code</strong>
                                 <textarea name="pixel" id="pixel" rows="5" class="form-control" placeholder="Facebook Pixel code...">{{$information->pixel}}</textarea>
                             </div>
-                             @error('address')
-                             <p class="text-danger">
-                                 {{$message}}
-                             </p>
-                            @enderror
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
                                 <strong for="role">Search Console Setup Code</strong>
                                 <textarea name="search_console" id="search_console" rows="5" class="form-control" placeholder="Search Console code...">{{$information->search_console}}</textarea>
                             </div>
-                             @error('address')
-                             <p class="text-danger">
-                                 {{$message}}
-                             </p>
-                            @enderror
                         </div>
+@endcan
                       <div class="col-md-6">
                             <div class="form-group">
                                 <strong for="copyright">Copyright Text</strong>

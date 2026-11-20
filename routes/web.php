@@ -59,8 +59,8 @@ Route::group(['as'=>'front.'], function() {
         Route::get('/return-policy','returnPolicy')->name('returnPolicy');
         Route::get('/faq','faq')->name('faq');
         Route::get('/send-sms','sendSMs')->name('sendSMs');
-        Route::post('/contacts','contact')->name('contact');
-        Route::post('/newsletter','newsletter')->name('newsletter');
+        Route::post('/contacts','contact')->name('contact')->middleware('throttle:10,1');
+        Route::post('/newsletter','newsletter')->name('newsletter')->middleware('throttle:10,1');
     });
 
     Route::controller(FrontProduct::class)->group(function(){
@@ -99,19 +99,17 @@ Route::group(['as'=>'front.'], function() {
 
     
     Route::controller(UserController::class)->group(function(){
-        Route::post('/user-login','login')->name('login');
-        Route::get('/seller-register','sellerRegister')->name('sellerRegister');
-        Route::post('/seller-register-post','sellerRegisterPost')->name('sellerRegisterPost');
-        Route::post('/user-register','Register')->name('register');
+        Route::post('/user-login','login')->name('login')->middleware('throttle:5,1');
+        Route::post('/user-register','Register')->name('register')->middleware('throttle:5,1');
         
-         Route::get('/get-otp','getOpt')->name('getOpt');
-         Route::post('/otp-verify','optVerify')->name('optVerify');
+        Route::get('/get-otp','getOpt')->name('getOpt');
+        Route::post('/otp-verify','optVerify')->name('optVerify')->middleware('throttle:5,1');
     });
 
 
     Route::resource('/carts',CartController::class);
     Route::post('/cart/store', [CartController::class, 'storeCart'])->name('carts.storeCart');
-    Route::get('/cart/clear-all', [CartController::class, 'clearAll'])->name('carts.clearAll');
+    Route::delete('/cart/clear-all', [CartController::class, 'clearAll'])->name('carts.clearAll');
 
     Route::group(['middleware' => 'auth'], function() {
         
@@ -132,7 +130,7 @@ Auth::routes(['register' => false]);
 //backend
 Route::controller(AuthController::class)->group(function(){
     Route::get('/admin','login')->name('admin.login');
-    Route::post('/admin-login','postLogin')->name('admin.postLogin');
+    Route::post('/admin-login','postLogin')->name('admin.postLogin')->middleware('throttle:5,1');
 });
 
 
@@ -140,7 +138,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
 	
   	Route::get('/Ip-block', [IPBlockController::class, 'index'])->name('ipblock');
   	
-  	Route::get('/Ip-block/delete/{id}', [IPBlockController::class, 'delete'])->name('ipblock.delete');
+  	Route::delete('/Ip-block/delete/{id}', [IPBlockController::class, 'delete'])->name('ipblock.delete');
   	Route::get('/Ip-block/edit/{id}', [IPBlockController::class, 'edit'])->name('ipblock.edit');
 	Route::put('/Ip-block/update/{id}', [IPBlockController::class, 'update'])->name('ipblock.update');
   
@@ -151,7 +149,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
   	Route::get('/get-dashboard-data',[DashboardController::class,'getDashboardData'])->name('getDashboardData');
   
     Route::post('/file-upload',[ProductController::class,'fileUpload'])->name('ckeditor.upload');
-    Route::get('/file-delete/{id}',[ProductController::class,'deleteImage'])->name('deleteImage');
+    Route::delete('/file-delete/{id}',[ProductController::class,'deleteImage'])->name('deleteImage');
     Route::get('/get-sub-category',[ProductController::class,'getSubcategory'])->name('getSubcategory');
     Route::get('/product-export',[ProductController::class,'productExport'])->name('productExport');
   
@@ -163,32 +161,32 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
 
         Route::get('/get-order-product','getOrderProduct')->name('getOrderProduct');
         Route::get('/get-order-product2','getOrderProduct2')->name('getOrderProduct2');
-        Route::get('/order-product-entry','orderProductEntry')->name('orderProductEntry');
-        Route::get('/landing-product-entry','landingProductEntry')->name('landingProductEntry');
+        Route::post('/order-product-entry','orderProductEntry')->name('orderProductEntry');
+        Route::post('/landing-product-entry','landingProductEntry')->name('landingProductEntry');
         Route::get('/order-export','orderExport')->name('orderExport');
 
         Route::get('/assign-user','assignUser')->name('assignUser');
-        Route::get('/order-status-opdate','orderStatusUpdateMulti')->name('orderStatusUpdateMulti');
-        Route::get('/all-order-delete','deleteAllOrder')->name('deleteAllOrder');
+        Route::post('/order-status-opdate','orderStatusUpdateMulti')->name('orderStatusUpdateMulti');
+        Route::delete('/all-order-delete','deleteAllOrder')->name('deleteAllOrder');
         Route::get('/order-list','orderList')->name('orderList');     
         Route::view('/print_multiple','backend.reports.print');      
       
         Route::get('/status-wise-order', 'status_wise_order')->name('status_wise_order');  
         Route::get('/search-order', 'searchOrder')->name('searchOrder');
 
-        Route::get('/assign-user-store','assignUserStore')->name('assignUserStore');
-        Route::get('/multi-order-status-update-store','multuOrderStatusUpdate')->name('multuOrderStatusUpdate');
+        Route::post('/assign-user-store','assignUserStore')->name('assignUserStore');
+        Route::post('/multi-order-status-update-store','multuOrderStatusUpdate')->name('multuOrderStatusUpdate');
       
-      //Redx Courier Service
-       Route::get('/create-redx-parcel','OrderSendToRedx')->name('createRedxParcel');     
-      
-      //Pathao Courier Service
-       Route::get('/zones-by-city/{city}','getPathaoZoneListByCity')->name('zonesByCity');     
-       Route::get('/areas-by-zone/{zone}','getPathaoAreaListByZone')->name('areasByZone');    
-       Route::get('/create-pathao-parcel','OrderSendToPathao')->name('createPathaoParcel');
+//Redx Courier Service
+       Route::post('/create-redx-parcel','OrderSendToRedx')->name('createRedxParcel');     
        
-       //Steadfast Courier Service
-       Route::get('/create-steadfast-parcel', 'OrderSendToSteadfast')->name('createSteadfastParcel');  
+       //Pathao Courier Service
+        Route::get('/zones-by-city/{city}','getPathaoZoneListByCity')->name('zonesByCity');     
+        Route::get('/areas-by-zone/{zone}','getPathaoAreaListByZone')->name('areasByZone');    
+        Route::post('/create-pathao-parcel','OrderSendToPathao')->name('createPathaoParcel');
+        
+        //Steadfast Courier Service
+        Route::post('/create-steadfast-parcel', 'OrderSendToSteadfast')->name('createSteadfastParcel');
       
       //generate pathao access token
       Route::get('generate-access-token', 'viewAccessToken');
@@ -196,12 +194,12 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
 
     });
 
-    Route::get('/recommended-update',[ProductController::class,'recommendedUpdate'])->name('recommendedUpdate');
+    Route::post('/recommended-update',[ProductController::class,'recommendedUpdate'])->name('recommendedUpdate');
   	Route::get('/product-copy/{id}',[ProductController::class,'productCopy'])->name('productCopy');
   
     Route::resource('products',ProductController::class);
     
-    Route::get('/popular-category',[CategoryController::class,'popularCatgeory'])->name('popularCatgeory');
+    Route::post('/popular-category',[CategoryController::class,'popularCatgeory'])->name('popularCatgeory');
     Route::resource('categories',CategoryController::class);
     Route::resource('sliders',SliderController::class);
     Route::resource('orders',OrderController::class);
@@ -210,7 +208,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
     Route::resource('roles',RoleController::class);
     Route::resource('permissions',PermissionController::class);
     
-    Route::get('/top-brand-update',[TypeController::class,'topBrandUpdate'])->name('topBrandUpdate');
+    Route::post('/top-brand-update',[TypeController::class,'topBrandUpdate'])->name('topBrandUpdate');
     Route::resource('types',TypeController::class);
     Route::resource('sizes',SizeController::class);
     Route::resource('weights',WeightController::class);
@@ -223,7 +221,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
   	Route::resource('pages',PageController::class);
   	Route::resource('landing_pages',LandingPageController::class);
   	 Route::get('landing-page/{id}',[PageController::class,'landing_page'])->name('landing_index');
-  	Route::get('delete-slider-image/{id}',[LandingPageController::class,'delete_slider'])->name('delete_slider');
+  	Route::delete('delete-slider-image/{id}',[LandingPageController::class,'delete_slider'])->name('delete_slider');
     Route::post('store-data',[LandingPageController::class,'storeData'])->name('landing_pages.storeData');
   	
     Route::resource('couriers',CourierController::class);
@@ -232,7 +230,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
     Route::resource('delivery-charges',DeliveryChargeController::class,['names'=>'delivery_charge']);
     Route::resource('coupon-codes',CouponCodeController::class,['names'=>'coupon_codes']);
 
-    Route::get('/user-status-update',[UsersController::class,'userStatusUpdate'])->name('userStatusUpdate');
+    Route::post('/user-status-update',[UsersController::class,'userStatusUpdate'])->name('userStatusUpdate');
     Route::resource('/home-section-images',HomeSectionImageController::class,['names'=>'home_section_images']);
     Route::resource('/product-discounts',ProductDiscountController::class,['names'=>'product_discounts']);
     
@@ -240,7 +238,7 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
     Route::get('/free-shipping-product',[ProductDiscountController::class,'free_shipping'])->name('free_shipping');
     Route::get('/create-free-shipping-product',[ProductDiscountController::class,'create_free_shipping'])->name('create_free_shipping');
     Route::post('/store-free-shipping',[ProductDiscountController::class,'store_free_shipping'])->name('store-free-shipping');
-    Route::get('/destroy-free-shipping',[ProductDiscountController::class,'fshippingdestroy'])->name('free-shipping.fshippingdestroy');
+    Route::delete('/destroy-free-shipping',[ProductDiscountController::class,'fshippingdestroy'])->name('free-shipping.fshippingdestroy');
     
 
 
@@ -276,13 +274,13 @@ Route::group(['prefix' => 'admin','middleware' => ['auth','admin.access'],'as'=>
    Route::controller(InformationController::class)->group(function(){
        Route::get('/profile', 'showProfile')->name('profile');
        Route::post('/profile-update', 'updateProfile')->name('profile.update');
-       Route::get('/status-coupon','statusCoupon')->name('status.coupon');
+       Route::post('/status-coupon','statusCoupon')->name('status.coupon');
    });   
 
    //Change Password
    Route::controller(ResetPasswordController::class)->group(function(){
        Route::get('/change-password', 'show')->name('password');
-       Route::post('/update-password', 'updatePassword')->name('password.update');
+       Route::post('/update-password', 'updatePassword')->name('password.update')->middleware('throttle:5,1');
    });
 
 });

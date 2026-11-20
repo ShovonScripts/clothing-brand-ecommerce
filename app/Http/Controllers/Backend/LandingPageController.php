@@ -16,6 +16,11 @@ use App\Models\Order;
 
 class LandingPageController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:landing.view')->only(['index', 'landing_page']);
+        $this->middleware('permission:landing.manage')->only(['create', 'store', 'edit', 'update', 'destroy', 'delete_slider', 'storeData']);
+    }
 
     public function index()
     {

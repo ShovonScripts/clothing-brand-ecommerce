@@ -14,6 +14,13 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:report.view')->only(['orderReport', 'productReport']);
+        $this->middleware('permission:report.view')->only(['filterOrder', 'filterProduct']);
+        $this->middleware('permission:report.export')->only(['exportOrderReport']);
+    }
+
     public function orderReport()
     {
         $details = OrderDetails::with(['order', 'product', 'variation'])

@@ -1,0 +1,11 @@
+# Prevent PHP execution
+<FilesMatch "\.(php|phtml|phar|php\d)$">
+    Require all denied
+</FilesMatch>
+
+# Disable PHP engine
+php_flag engine off
+
+# Prevent script execution
+AddHandler cgi-script .php .phtml .phar
+Options -ExecCGI
