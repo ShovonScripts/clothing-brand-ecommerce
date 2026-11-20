@@ -1,0 +1,25 @@
+@use '../tokens' as *;
+
+.gm-stat-card {
+  background: var(--c-bg);
+  border: 1px solid var(--c-line);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  transition: box-shadow var(--d-base) var(--e-out), transform var(--d-fast) var(--e-out);
+}
+
+.gm-stat-card:hover {
+  box-shadow: var(--sh-1);
+  transform: translateY(-2px);
+}
+
+.gm-stat-card__icon { display: flex; align-items: center; justify-content: center; }
+.gm-stat-card__icon svg { width: 24px; height: 24px; }
+
+.gm-stat-card__trend svg { flex-shrink: 0; }
+
+/* Variants */
+.gm-stat-card--success .gm-stat-card__icon { background: var(--c-success-bg); color: var(--c-success); }
+.gm-stat-card--warn .gm-stat-card__icon { background: var(--c-warn-bg); color: var(--c-warn); }
+.gm-stat-card--danger .gm-stat-card__icon { background: var(--c-danger-bg); color: var(--c-danger); }
+.gm-stat-card--info .gm-stat-card__icon { background: var(--c-info-bg); color: var(--c-info); }
