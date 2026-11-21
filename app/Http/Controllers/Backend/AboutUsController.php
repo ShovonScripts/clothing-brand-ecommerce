@@ -1,17 +1,21 @@
 <?php
 
 namespace App\Http\Controllers\Backend;
-use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AboutUs;
+use App\Services\UploadService;
 
 class AboutUsController extends Controller
 {
-    public function __construct()
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
     {
         $this->middleware('permission:about_us.view')->only(['index']);
         $this->middleware('permission:about_us.edit')->only(['store']);
+        $this->uploadService = $uploadService;
     }
 
     public function index()
@@ -19,69 +23,59 @@ class AboutUsController extends Controller
         $item = AboutUs::first() ?? new AboutUs();
         return view('backend.about_us.about_us', compact('item'));
     }
-    
-    
+
+
     public function store(Request $request)
     {
-        $item=AboutUs::first() ?? new AboutUs();
-        
-        $data=$request->validate([
-             'site_name'=> 'required',
-             'site_url'=> 'required',
-             'page_title'=> 'required',
-             'sub_title'=> 'required',
-             'speech'=> 'required',
-             'page_desc'=> '',
-             'title_one'=> '',
-             'desc_one'=> '',
-             'title_two'=> '',
-             'desc_two'=> '',
+        $item = AboutUs::first() ?? new AboutUs();
+
+        $data = $request->validate([
+            'site_name' => 'required',
+            'site_url' => 'required',
+            'page_title' => 'required',
+            'sub_title' => 'required',
+            'speech' => 'required',
+            'page_desc' => '',
+            'title_one' => '',
+            'desc_one' => '',
+            'title_two' => '',
+            'desc_two' => '',
+            'cover_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'signature' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-        
-        $url=$request->video;
-        
-        if(!empty($url) && ($item->video !=$url)){
-            $data['video']=$this->getUrl($url);
+
+        $url = $request->video;
+
+        if (!empty($url) && ($item->video != $url)) {
+            $data['video'] = $this->getUrl($url);
         }
 
-        if($request->hasFile('cover_image')) {
-            deleteImage('aboutus', $item->cover_image);
-            $originName = $request->file('cover_image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('cover_image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('cover_image')->move(public_path('aboutus'), $fileName);
-            $data['cover_image']=$fileName;
+        if ($request->hasFile('cover_image')) {
+            $this->uploadService->delete($item->cover_image, 'aboutus');
+            $data['cover_image'] = $this->uploadService->upload($request->file('cover_image'), 'aboutus', 'about');
         }
 
-        if($request->hasFile('signature')) {
-            deleteImage('aboutus', $item->signature);
-            $originName = $request->file('signature')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('signature')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('signature')->move(public_path('aboutus'), $fileName);
-            $data['signature']=$fileName;
+        if ($request->hasFile('signature')) {
+            $this->uploadService->delete($item->signature, 'aboutus');
+            $data['signature'] = $this->uploadService->upload($request->file('signature'), 'aboutus', 'about');
         }
-        
-    
-        
-        
-        if($item->exists){
+
+
+        if ($item->exists) {
             $item->update($data);
-        }else{
+        } else {
             AboutUs::create($data);
         }
 
-        return response()->json(['status'=>true ,'msg'=>'About Us Info  Is Created !!']);
+        return response()->json(['status' => true, 'msg' => 'About Us Info  Is Created !!']);
     }
-    
-    private function getUrl($url){
-        
-        parse_str( parse_url( $url, PHP_URL_QUERY ), $my_array_of_vars );
-        return $my_array_of_vars['v'];    
-        
+
+    private function getUrl($url)
+    {
+
+        parse_str(parse_url($url, PHP_URL_QUERY), $my_array_of_vars);
+        return $my_array_of_vars['v'];
+
     }
+
 }

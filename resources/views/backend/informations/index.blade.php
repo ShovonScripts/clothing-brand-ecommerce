@@ -427,110 +427,21 @@
                              <p class="text-danger">
                                  {{$message}}
                              </p>
-                            @enderror
+@enderror
                     </div>
                     
-                    <h5 class="text-danger mt-3">These fields only for Redx Courier Service</h5>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <strong for="redx_api_base_url">Redx API Base URL</strong>
-                        <textarea name="redx_api_base_url" id="redx_api_base_url" rows="1" class="form-control" placeholder="https://sandbox.redx.com.bd/v1.0.0-beta">{{$information->redx_api_base_url}}</textarea>
-                      </div>
-                      @error('redx_api_base_url')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
+                    <div class="col-12 mt-3">
+                        <div class="alert alert-info">
+                            <strong>Courier API Configuration:</strong> Redx, Pathao, and Steadfast courier credentials are now configured via <code>.env</code> file and <code>config/services.php</code>. 
+                            Database fields have been deprecated. Please set the following environment variables:
+                            <ul class="mb-0 mt-2">
+                                <li><code>REDX_API_BASE_URL</code>, <code>REDX_API_ACCESS_TOKEN</code></li>
+                                <li><code>PATHAO_API_BASE_URL</code>, <code>PATHAO_API_ACCESS_TOKEN</code>, <code>PATHAO_STORE_ID</code></li>
+                                <li><code>STEADFAST_API_BASE_URL</code>, <code>STEADFAST_API_KEY</code>, <code>STEADFAST_SECRET_KEY</code></li>
+                            </ul>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <strong for="redx_api_access_token">Redx API Access Token</strong>
-                        <textarea name="redx_api_access_token" id="redx_api_access_token" rows="4" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Nzc2MjAiLCJpYXQiOjE2NzI4MTgyMDIsImlzcyI6IkVyeEZSY2VuemNOMkZrcmdyYXBUM1p6ZXN4emx2NnBOIiwic2hvcF9pZCI6Nzc3NjIwLCJ1c2VyX2lkIjoxNjQzNDY0fQ.1PO9zwZ-Wgy7bgzMfJ414EiEdqVCnSDJoodNXe1NNOU">{{$information->redx_api_access_token}}</textarea>
-                      </div>
-                      @error('redx_api_access_token')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>
-               </div> 
-                 <h5 class="text-danger mt-3">These fields only for Pathao Courier Service</h5>
-                  <div class="row">
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <strong for="pathao_api_base_url">Pathao API Base URL</strong>
-                        <textarea name="pathao_api_base_url" id="pathao_api_base_url" rows="1" class="form-control" placeholder="https://sandbox.redx.com.bd/v1.0.0-beta">
-                          {{$information->pathao_api_base_url}}
-                        </textarea>
-                      </div>
-                      @error('pathao_api_base_url')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <strong for="pathao_api_access_token">Pathao API Access Token</strong>
-                        <textarea name="pathao_api_access_token" id="pathao_api_access_token" rows="4" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Nzc2MjAiLCJpYXQiOjE2NzI4MTgyMDIsImlzcyI6IkVyeEZSY2VuemNOMkZrcmdyYXBUM1p6ZXN4emx2NnBOIiwic2hvcF9pZCI6Nzc3NjIwLCJ1c2VyX2lkIjoxNjQzNDY0fQ.1PO9zwZ-Wgy7bgzMfJ414EiEdqVCnSDJoodNXe1NNOU">
-                          {{$information->pathao_api_access_token}}
-                        </textarea>
-                      </div>
-                      @error('pathao_api_access_token')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>                    
-                    <div class="col-md-6">
-                      <div class="form-group">
-                        <strong for="pathao_store_id">Pathao API Store ID</strong>
-                        <input type="text" name="pathao_store_id" id="pathao_store_id" value="{{$information->pathao_store_id}}" class="form-control" placeholder="Pathao store id">
-                      </div>
-                      @error('pathao_store_id')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>
-               </div>
-               
-               <h5 class="text-danger mt-3">These fields only for Stead-Fast Courier Service</h5>
-                  <div class="row">
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <strong for="pathao_api_base_url">Stead Fast API Base URL</strong>
-                        <textarea name="steadfast_api_base_url" id="steadfast_api_base_url" rows="2" class="form-control" placeholder="https://sandbox.redx.com.bd/v1.0.0-beta">{{$information->steadfast_api_base_url}}</textarea></div>
-                      @error('steadfast_api_base_url')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <strong for="pathao_api_access_token">Stead Fast API Key</strong>
-                        <textarea name="steadfast_api_key" id="steadfast_api_key" rows="2" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Nzc2MjAiLCJpYXQiOjE2NzI4MTgyMDIsImlzcyI6IkVyeEZSY2VuemNOMkZrcmdyYXBUM1p6ZXN4emx2NnBOIiwic2hvcF9pZCI6Nzc3NjIwLCJ1c2VyX2lkIjoxNjQzNDY0fQ.1PO9zwZ-Wgy7bgzMfJ414EiEdqVCnSDJoodNXe1NNOU">{{$information->steadfast_api_key}}</textarea>
-                      </div>
-                      @error('pathao_api_access_token')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div>                    
-                    <div class="col-md-4">
-                      <div class="form-group">
-                        <strong for="pathao_api_access_token">Stead Fast Secret Key</strong>
-                        <textarea name="steadfast_secret_key" id="steadfast_secret_key" rows="2" class="form-control" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI3Nzc2MjAiLCJpYXQiOjE2NzI4MTgyMDIsImlzcyI6IkVyeEZSY2VuemNOMkZrcmdyYXBUM1p6ZXN4emx2NnBOIiwic2hvcF9pZCI6Nzc3NjIwLCJ1c2VyX2lkIjoxNjQzNDY0fQ.1PO9zwZ-Wgy7bgzMfJ414EiEdqVCnSDJoodNXe1NNOU">{{$information->steadfast_secret_key}}</textarea>
-                      </div>
-                      @error('steadfast_secret_key')
-                      <p class="text-danger">
-                        {{$message}}
-                      </p>
-                      @enderror
-                    </div> 
-               </div>
-      
+                    
                     <hr>
                     <br>
                     <input type="submit" value="Update" class="btn btn-success">

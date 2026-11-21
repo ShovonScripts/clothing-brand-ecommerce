@@ -6,12 +6,24 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Type;
 use DB;
+use App\Services\UploadService;
 
 class TypeController extends Controller
 {
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
+    {
+        $this->middleware('permission:type.view')->only(['index']);
+        $this->middleware('permission:type.create')->only(['create', 'store']);
+        $this->middleware('permission:type.edit')->only(['edit', 'update', 'topBrandUpdate']);
+        $this->middleware('permission:type.delete')->only(['destroy']);
+        $this->uploadService = $uploadService;
+    }
+
     public function index()
     {
-        $items=Type::all();
+        $items = Type::all();
         return view('backend.types.index', compact('items'));
     }
 
@@ -22,11 +34,6 @@ class TypeController extends Controller
      */
     public function create()
     {
-        if(!auth()->user()->can('type.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
         return view('backend.types.create');
     }
 
@@ -38,28 +45,18 @@ class TypeController extends Controller
      */
     public function store(Request $request)
     {
-        if(!auth()->user()->can('type.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $data=$request->validate([
-             'name'=> 'required',
+        $data = $request->validate([
+            'name' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-        
-        if($request->hasFile('image')) {
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('types'), $fileName);
-            $data['image']=$fileName;
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'types', 'default');
         }
 
         Type::create($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Type Is  Created !!','url'=>route('admin.types.index')]);
+        return response()->json(['status' => true, 'msg' => 'Type Is  Created !!', 'url' => route('admin.types.index')]);
     }
 
     /**
@@ -77,16 +74,11 @@ class TypeController extends Controller
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http.Response
      */
     public function edit($id)
     {
-        if(!auth()->user()->can('type.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $item=Type::find($id);
+        $item = Type::find($id);
         return view('backend.types.edit', compact('item'));
     }
 
@@ -99,30 +91,20 @@ class TypeController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if(!auth()->user()->can('type.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $category=Type::find($id);
-        $data=$request->validate([
-             'name'=> 'required',
+        $category = Type::find($id);
+        $data = $request->validate([
+            'name' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        if($request->hasFile('image')) {
-            deleteImage('types', $category->image);
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('types'), $fileName);
-            $data['image']=$fileName;
+        if ($request->hasFile('image')) {
+            $this->uploadService->delete($category->image, 'types');
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'types', 'default');
         }
-       
+
         $category->update($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Category Is Updated !!','url'=>route('admin.types.index')]);
+        return response()->json(['status' => true, 'msg' => 'Type Is Updated !!', 'url' => route('admin.types.index')]);
 
     }
 
@@ -134,22 +116,19 @@ class TypeController extends Controller
      */
     public function destroy($id)
     {
-        if(!auth()->user()->can('type.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $category=Type::find($id);
-        deleteImage('types', $category->image);
+        $category = Type::find($id);
+        $this->uploadService->delete($category->image, 'types');
         $category->delete();
-        return response()->json(['status'=>true ,'msg'=>'Type Is Deleted !!']);
+        return response()->json(['status' => true, 'msg' => 'Type Is Deleted !!']);
 
     }
-    
-    public function topBrandUpdate(){
-        
-        $status=(request('is_top')==1)?1:null;
-        DB::table('types')->whereIn('id', request('brand_ids'))->update(['is_top'=>$status]);
-        return response()->json(['status'=>true ,'msg'=>'Brand Status Updated !!']);
+
+    public function topBrandUpdate()
+    {
+
+        $status = (request('is_top') == 1) ? 1 : null;
+        DB::table('types')->whereIn('id', request('brand_ids'))->update(['is_top' => $status]);
+        return response()->json(['status' => true, 'msg' => 'Brand Status Updated !!']);
     }
+
 }

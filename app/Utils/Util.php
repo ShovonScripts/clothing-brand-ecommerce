@@ -46,25 +46,21 @@ class Util {
 
 	public function increaseProductStock($product_id,$variation_id, $stock){
 
-		$item=ProductStock::where(['product_id'=>$product_id,'variation_id'=>$variation_id])->first();
+        $item = ProductStock::where(['product_id'=>$product_id,'variation_id'=>$variation_id])->lockForUpdate()->first();
 
-		if ($item) {
-			
-		}
-		else{
-			$item=new ProductStock();
-			$item->product_id=$product_id;
-			$item->variation_id=$variation_id;
-			$item->quantity=0;
-		}
+        if (!$item) {
+            $item = new ProductStock();
+            $item->product_id = $product_id;
+            $item->variation_id = $variation_id;
+            $item->quantity = 0;
+        }
 
-		$item->quantity+=$stock;
-		$item->save();
+        $item->quantity += $stock;
+        $item->save();
 
+        return true;
 
-		return true;
-
-	}
+    }
 
 
 	public function updateProductStock($product_id, $variation_id, $old_stock, $new_stock){
@@ -94,17 +90,17 @@ class Util {
 
 	public function decreaseProductStock($product_id, $variation_id, $stock){
 
-		$item=ProductStock::where(['product_id'=>$product_id, 'variation_id'=>$variation_id])->first();
+        $item = ProductStock::where(['product_id'=>$product_id, 'variation_id'=>$variation_id])->lockForUpdate()->first();
 
-		if($item){
-			$item->quantity-=$stock;
-			$item->save();
-		}
-		
-		return true;
+        if($item){
+            $item->quantity -= $stock;
+            $item->save();
+        }
+        
+        return true;
 
 
-	}
+    }
 
 
 	public function checkProductStock($product_id, $variation_id){

@@ -73,13 +73,37 @@ class CheckoutController extends Controller
         
         
         if(empty(auth()->user()->id)){
-        	$user = User::create([
-              'first_name' => $request->first_name,
-              'mobile' => $request->mobile,
-              'shipping_address' => $request->shipping_address,
-              'note' => $request->note
-            ]);
-          $data['user_id']=$user->id;
+            // ORD-07: Find or create user by mobile to avoid duplicate accounts
+            $mobile = $request->mobile;
+            $user = User::where('mobile', $mobile)->first();
+            
+            if (!$user) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'mobile' => $mobile,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            } else {
+                // Update existing user's info
+                $user->update([
+                    'first_name' => $request->first_name,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            }
+            
+            // Don't link to existing staff/admin accounts
+            if ($user->hasAnyRole(['admin', 'worker', 'vendor'])) {
+                $user = User::create([
+                    'first_name' => $request->first_name,
+                    'mobile' => $mobile,
+                    'shipping_address' => $request->shipping_address,
+                    'note' => $request->note,
+                ]);
+            }
+            
+            $data['user_id'] = $user->id;
 
         } else {
         	$data['user_id']=auth()->user()->id;
@@ -117,6 +141,17 @@ class CheckoutController extends Controller
 
       	$charge=DeliveryCharge::where('id', $data['delivery_charge_id'])->first();      	;
       	$charge=$charge?$charge->amount:0;
+        
+        // ORD-04: Delivery charge required for non-free-shipping products
+        $hasNonFreeShipping = empty($product->is_free_shipping);
+        if ($hasNonFreeShipping && (!$charge || !$charge->status)) {
+            return response()->json(['success' => false, 'msg' => 'Valid delivery charge is required']);
+        }
+        if (!$hasNonFreeShipping && $data['delivery_charge_id'] != 0) {
+            $data['delivery_charge_id'] = 0;
+            $charge = null;
+        }
+        
         $data['date']=date('Y-m-d');
 
         // Order Assign Among Users Start
@@ -139,11 +174,45 @@ class CheckoutController extends Controller
 
 
         $data['invoice_no']=generateInvoiceNo();
-        $data['discount']= $total_discount_val;
-        $data['shipping_charge']= $charge;
+        
+        // ORD-05: Apply coupon logic for landing page orders
+        $couponId = session('coupon_id');
+        $coupon = $couponId ? CouponCode::find($couponId) : null;
+        $coupn_discount = 0;
+        
+        $subtotal = $unit_price * $proQty;
+        
+        if ($coupon) {
+            if ($coupon->usage_limit && $coupon->used_count >= $coupon->usage_limit) {
+                $coupon = null;
+            } elseif ($coupon->usage_limit_per_user && auth()->check()) {
+                $userUsage = \App\Models\CouponUsage::where('coupon_code_id', $coupon->id)
+                    ->where('user_id', auth()->id())
+                    ->count();
+                if ($userUsage >= $coupon->usage_limit_per_user) {
+                    $coupon = null;
+                }
+            } elseif ($coupon->minimum_amount && $subtotal < $coupon->minimum_amount) {
+                $coupon = null;
+            } elseif ($coupon->start && $coupon->start > now()->toDateString()) {
+                $coupon = null;
+            } elseif ($coupon->end && $coupon->end < now()->toDateString()) {
+                $coupon = null;
+            }
+            
+            // Cap discount at subtotal (prevent negative total)
+            if ($coupon && $coupon->discount_type === 'fixed') {
+                $coupn_discount = min($coupon->amount, $subtotal);
+            } elseif ($coupon && $coupon->discount_type === 'percent') {
+                $coupn_discount = ($subtotal * $coupon->amount) / 100;
+            }
+        }
+        
+        $data['discount'] = $total_discount_val + $coupn_discount;
+        $data['shipping_charge'] = $charge;
         $data['amount'] = ($unit_price + $product['discount']) * $proQty;
-        $data['final_amount'] = ($unit_price * $proQty) + $charge;
-        $data['courier_id']=3;
+        $data['final_amount'] = ($unit_price * $proQty) + $charge - $coupn_discount;
+        $data['courier_id'] = 3;
         
         DB::beginTransaction();
         try {
@@ -153,6 +222,15 @@ class CheckoutController extends Controller
             $order=Order::create($data);
             session()->put('placed_order_id', $order->id);
             
+            // Track coupon usage
+            if ($coupon) {
+                CouponUsage::create([
+                    'coupon_code_id' => $coupon->id,
+                    'user_id' => auth()->id(),
+                    'order_id' => $order->id,
+                ]);
+                $coupon->increment('used_count');
+            }
 
             if (!empty($pr_data)) {
 

@@ -22,27 +22,37 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class OrderController extends Controller
 {
-  	private $redx_api_base_url = '';
-  	private $redx_api_access_token = '';  	
-  	private $pathao_api_base_url = '';
-  	private $pathao_api_access_token = '';
-    private $pathao_store_id = '';
-    private $steadfast_api_base_url = '';
-  	private $steadfast_api_key = '';
-    private $steadfast_secret_key = '';
     private $util = '';
+
     public function __construct(Util $util)
     {
-		$info = Information::first();
-      	$this->redx_api_base_url = $info->redx_api_base_url.'/';
-      	$this->redx_api_access_token = 'Bearer '.$info->redx_api_access_token;      	
-      	$this->pathao_api_base_url = $info->pathao_api_base_url.'/aladdin/api/v1/';
-      	$this->pathao_api_access_token = 'Bearer '.$info->pathao_api_access_token;
-      	$this->pathao_store_id = $info->pathao_store_id;
-        $this->steadfast_api_base_url = $info->steadfast_api_base_url;
-      	$this->steadfast_api_key = $info->steadfast_api_key;
-      	$this->steadfast_secret_key = $info->steadfast_secret_key;
         $this->util = $util;
+    }
+
+    private function getRedxConfig(): array
+    {
+        return [
+            'base_url' => config('services.redx.base_url', 'https://sandbox.redx.com.bd/v1.0.0-beta') . '/',
+            'access_token' => 'Bearer ' . config('services.redx.access_token', ''),
+        ];
+    }
+
+    private function getPathaoConfig(): array
+    {
+        return [
+            'base_url' => config('services.pathao.base_url', 'https://sandbox-apis.pathao.com') . '/aladdin/api/v1/',
+            'access_token' => 'Bearer ' . config('services.pathao.access_token', ''),
+            'store_id' => config('services.pathao.store_id', ''),
+        ];
+    }
+
+    private function getSteadfastConfig(): array
+    {
+        return [
+            'base_url' => config('services.steadfast.base_url', 'https://portal.packzy.io/api/v1'),
+            'api_key' => config('services.steadfast.api_key', ''),
+            'secret_key' => config('services.steadfast.secret_key', ''),
+        ];
     }
 
     public function orderExport()
@@ -853,45 +863,46 @@ return response()->json(['success' => true, 'html' => $html, 'pr_id' => $pr_id])
         //return response()->json(['status'=>true ,'msg'=>$data]);
   }
   
-  function getRedxAreaList($by = null, $value = null)
-  {
-      $response = Http::withHeaders([
-            'API-ACCESS-TOKEN' => $this->redx_api_access_token,
-       ])->get($this->redx_api_base_url.'areas'); 
-       $areas = $response->json()['areas'];
-       return $areas;
-  }
-  function createRedxParcel($item)
-  {
-      //$area = $this->getRedxAreaList('post_code', $item->zip_code)[0];
-    
-      $response = Http::withHeaders([
-            'API-ACCESS-TOKEN' => $this->redx_api_access_token,
-            'Content-Type' => 'application/json'
-        ])->post($this->redx_api_base_url.'parcel', [
-            "customer_name" 		 => $item->first_name ?? $item->user->first_name.' '.$item->last_name ?? $item->user->last_name, 
-            "customer_phone"         => $item->mobile ?? $item->user->mobile,
-            "delivery_area"          => $item->area_name, // delivery area name
-            "delivery_area_id"       => $item->area_id, // area id
-            "customer_address"       => $item->shipping_address, 
-            "merchant_invoice_id"    => $item->invoice_no,
-            "cash_collection_amount" => $item->final_amount,
-            "parcel_weight"          => "500", //parcel weight in gram
-            "instruction"            => "",
-            "value"                  => $item->final_amount, //compensation amount
-            "pickup_store_id"        => 0, // store id
-            "parcel_details_json"    => []
-        ]); 
-    
+function getRedxAreaList($by = null, $value = null)
+{
+    $config = $this->getRedxConfig();
+    $response = Http::withHeaders([
+        'API-ACCESS-TOKEN' => $config['access_token'],
+    ])->get($config['base_url'] . 'areas');
+    $areas = $response->json()['areas'];
+    return $areas;
+}
+function createRedxParcel($item)
+{
+    $config = $this->getRedxConfig();
+    $response = Http::withHeaders([
+        'API-ACCESS-TOKEN' => $config['access_token'],
+        'Content-Type' => 'application/json'
+    ])->post($config['base_url'] . 'parcel', [
+        "customer_name" => $item->first_name ?? $item->user->first_name . ' ' . $item->last_name ?? $item->user->last_name,
+        "customer_phone" => $item->mobile ?? $item->user->mobile,
+        "delivery_area" => $item->area_name,
+        "delivery_area_id" => $item->area_id,
+        "customer_address" => $item->shipping_address,
+        "merchant_invoice_id" => $item->invoice_no,
+        "cash_collection_amount" => $item->final_amount,
+        "parcel_weight" => "500",
+        "instruction" => "",
+        "value" => $item->final_amount,
+        "pickup_store_id" => 0,
+        "parcel_details_json" => []
+    ]);
+
     return $response->json();
-  }
+}
   
-  //Pathao Courier Service
+//Pathao Courier Service
   function getPathaoStoreList()
   {
+      $config = $this->getPathaoConfig();
       $response = Http::withHeaders([
-            'Authorization' => $this->pathao_api_access_token,
-       ])->get($this->pathao_api_base_url.'stores'); 
+            'Authorization' => $config['access_token'],
+       ])->get($config['base_url'] . 'stores');
     
        $stores = $response->json()['data']['data'] ?? [];
        return $stores;
@@ -899,9 +910,10 @@ return response()->json(['success' => true, 'html' => $html, 'pr_id' => $pr_id])
   
   function getPathaoCityList()
   {
+      $config = $this->getPathaoConfig();
       $response = Http::withHeaders([
-            'Authorization' => $this->pathao_api_access_token,
-       ])->get($this->pathao_api_base_url.'countries/1/city-list'); 
+            'Authorization' => $config['access_token'],
+       ])->get($config['base_url'] . 'countries/1/city-list');
     
        $cities = $response->json()['data']['data'] ?? [];
        return $cities;
@@ -909,63 +921,60 @@ return response()->json(['success' => true, 'html' => $html, 'pr_id' => $pr_id])
   
   function getPathaoZoneListByCity($city)
   {
+      $config = $this->getPathaoConfig();
       $response = Http::withHeaders([
-            'Authorization' => $this->pathao_api_access_token,
-       ])->get($this->pathao_api_base_url.'cities/'.$city.'/zone-list'); 
+            'Authorization' => $config['access_token'],
+       ])->get($config['base_url'] . 'cities/' . $city . '/zone-list');
     
        $zones = $response->json()['data']['data'] ?? [];
-    	
-       return response()->json(['success'=>true, 'zones'=> $zones]);
+      	
+       return response()->json(['success' => true, 'zones' => $zones]);
   }  
   
   function getPathaoAreaListByZone($zone)
   {
+      $config = $this->getPathaoConfig();
       $response = Http::withHeaders([
-            'Authorization' => $this->pathao_api_access_token,
-       ])->get($this->pathao_api_base_url.'zones/'.$zone.'/area-list'); 
+            'Authorization' => $config['access_token'],
+       ])->get($config['base_url'] . 'zones/' . $zone . '/area-list');
     
        $areas = $response->json()['data']['data'] ?? [];
     
-       return response()->json(['success'=>true, 'areas'=> $areas]);
+       return response()->json(['success' => true, 'areas' => $areas]);
   }
   
   function OrderSendToPathao()
   {
-        foreach(request('order_ids') as $id)
-        {   
-           $item=Order::with('user')->find($id);
-           if($item->status == 'on_the_way' && $item->courier_id == 2 && $item->courier_tracking_id == NULL)
-           {
+        foreach (request('order_ids') as $id) {
+           $item = Order::with('user')->find($id);
+           if ($item->status == 'on_the_way' && $item->courier_id == 2 && $item->courier_tracking_id == NULL) {
               $status = $this->createPathaoParcel($item);
-              if(!empty($status['data']['consignment_id']))
-              {
+              if (!empty($status['data']['consignment_id'])) {
                 $item->courier_tracking_id = $status['data']['consignment_id'];
                 $item->save();
+              } else if (!empty($status['errors'])) {
+                return response()->json(['status' => false, 'invoice' => $item->invoice_no, 'errors' => $status['errors']]);
               }
-             else if(!empty($status['errors']))
-             {
-               return response()->json(['status'=>false ,'invoice'=>$item->invoice_no, 'errors'=>$status['errors']]);
-             }
-             
+              
            }
-          
+           
         }
-        return response()->json(['status'=>true ,'msg'=>'Order Send to Pathao Successfully!!']);
-        //return response()->json(['status'=>true ,'msg'=>$data]);
+        return response()->json(['status' => true, 'msg' => 'Order Send to Pathao Successfully!!']);
   }
   
   function createPathaoParcel($item)
   {
+      $config = $this->getPathaoConfig();
     
       $response = Http::withHeaders([
-            'Authorization' => $this->pathao_api_access_token,
+            'Authorization' => $config['access_token'],
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->post($this->pathao_api_base_url.'orders', [
-        	"store_id" 		 		 		=> $this->pathao_store_id, 
-            "merchant_order_id"      		=> $item->invoice_no,
-            "sender_name"          			=> auth()->user()->username ?? 'Admin', 
-            "sender_phone"       			=> auth()->user()->mobile ?? '01700000000',
+        ])->post($config['base_url'] . 'orders', [
+            "store_id" => $config['store_id'],
+            "merchant_order_id" => $item->invoice_no,
+            "sender_name" => auth()->user()->username ?? 'Admin',
+            "sender_phone" => auth()->user()->mobile ?? '01700000000',
             "recipient_name"       			=> $item->first_name ?? $item->user->first_name.' '.$item->last_name ?? $item->user->last_name, 
             "recipient_phone"    			=> $item->mobile ?? $item->user->mobile,
             "recipient_address" 			=> $item->shipping_address,
@@ -1024,24 +1033,24 @@ return response()->json(['success' => true, 'html' => $html, 'pr_id' => $pr_id])
   }
 
   
-  function createSteadfastParcel($item)
+function createSteadfastParcel($item)
   {
+      $config = $this->getSteadfastConfig();
       $response = Http::withHeaders([
-            'Api-Key' => $this->steadfast_api_key,
-            'Secret-Key' => $this->steadfast_secret_key,
+            'Api-Key' => $config['api_key'],
+            'Secret-Key' => $config['secret_key'],
             'Content-Type' => 'application/json'
-        ])->post($this->steadfast_api_base_url.'create_order', [
-            "invoice"      		=> $item->invoice_no,
-            "recipient_name"    => $item->first_name ? $item->first_name.' '.$item->last_name : $item->user->first_name.' '.$item->user->last_name, 
-            "recipient_phone"   => $item->mobile ?? $item->user->mobile,
+        ])->post($config['base_url'] . 'create_order', [
+            "invoice" => $item->invoice_no,
+            "recipient_name" => $item->first_name ? $item->first_name . ' ' . $item->last_name : $item->user->first_name . ' ' . $item->user->last_name,
+            "recipient_phone" => $item->mobile ?? $item->user->mobile,
             "recipient_address" => $item->shipping_address,
-            "cod_amount"    	=> (int) $item->final_amount,
-            "note"    			=> $item->note,
+            "cod_amount" => (int) $item->final_amount,
+            "note" => $item->note,
         ]); 
-        dd($this->steadfast_api_base_url);
     
     return $response->json();
-  }
+}
   
   public function viewAccessToken()
   {

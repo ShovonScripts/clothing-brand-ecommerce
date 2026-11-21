@@ -31,7 +31,7 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
-'stripe' => [
+    'stripe' => [
         'key' => env('STRIPE_KEY'),
         'secret' => env('STRIPE_SECRET'),
     ],
@@ -46,6 +46,28 @@ return [
         'apikey' => env('SMS_API_KEY'),
         'secretkey' => env('SMS_SECRET_KEY'),
         'sender_id' => env('SMS_SENDER_ID'),
+    ],
+
+    /*
+     * Courier services configuration.
+     * Credentials should be stored in .env and referenced here.
+     * Database fields are deprecated and will be removed.
+     */
+    'redx' => [
+        'base_url' => env('REDX_API_BASE_URL', 'https://sandbox.redx.com.bd/v1.0.0-beta'),
+        'access_token' => env('REDX_API_ACCESS_TOKEN'),
+    ],
+
+    'pathao' => [
+        'base_url' => env('PATHAO_API_BASE_URL', 'https://sandbox-apis.pathao.com'),
+        'access_token' => env('PATHAO_API_ACCESS_TOKEN'),
+        'store_id' => env('PATHAO_STORE_ID'),
+    ],
+
+    'steadfast' => [
+        'base_url' => env('STEADFAST_API_BASE_URL', 'https://portal.packzy.io/api/v1'),
+        'api_key' => env('STEADFAST_API_KEY'),
+        'secret_key' => env('STEADFAST_SECRET_KEY'),
     ],
 
 ];

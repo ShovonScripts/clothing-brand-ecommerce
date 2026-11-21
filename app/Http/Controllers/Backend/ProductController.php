@@ -17,10 +17,23 @@ use App\Models\Variation;
 use DB;
 use App\Exports\ProductExport;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\UploadService;
+use Illuminate\Validation\ValidationException;
 
 
 class ProductController extends Controller
 {
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
+    {
+        $this->middleware('permission:product.view')->only(['index']);
+        $this->middleware('permission:product.create')->only(['create', 'store']);
+        $this->middleware('permission:product.edit')->only(['edit', 'update', 'productCopy']);
+        $this->middleware('permission:product.delete')->only(['destroy', 'deleteImage']);
+        $this->uploadService = $uploadService;
+    }
+
     /**
      * Display a listing of the resource.
      *
@@ -33,29 +46,29 @@ class ProductController extends Controller
 
     public function index()
     {
-      
-      	if(!auth()->user()->can('product.view'))
+
+        if(!auth()->user()->can('product.view'))
         {
             abort(403, 'unauthorized');
         }
-      
+
         $q=request()->q;
         $query=Product::query();
                 if(!empty($q)){
                     $query->where(function($row) use ($q){
                         $row->where('name','Like','%'.$q.'%');
                         $row->orwhere('description','Like','%'.$q.'%');
-                      	$row->orwhere('sku','Like','%'.$q.'%');
+                        $row->orwhere('sku','Like','%'.$q.'%');
                     });
                 }
-      			
-      		if(auth()->user()->hasRole('admin')==false){
+
+        if(auth()->user()->hasRole('admin')==false){
               $query->where('user_id', auth()->user()->id);
             }
-     
+
         $items=$query->latest()->paginate(30);
         // dd($items);
-        
+
         return view('backend.products.index', compact('items','q'));
     }
 
@@ -72,11 +85,6 @@ class ProductController extends Controller
     }
     public function create()
     {
-        if(!auth()->user()->can('product.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
         $cats=Category::whereNull('parent_id')->get();
         $sizes=Size::all();
         $types=Type::all();
@@ -93,131 +101,92 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        if(!auth()->user()->can('product.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $data=$request->validate([
-             'name'=> 'required',
-             'type'=> 'required',
-             'image'=> 'required|image',
-             'category_id'=> 'required',
-             'sub_category_id'=> '',
-             'type_id'=> '',
-             'description'=> '',
-             'body'=> '',
-             'feature'=> '',
-             'sku'=> '',
-             'purchase_price'=> '',
-             'sell_price'=> 'required|numeric',
-             'regular_price'=> '',
-             'is_stock' => '',
-             'video_link' => ''
+        $data = $request->validate([
+            'name' => 'required',
+            'type' => 'required',
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'category_id' => 'required',
+            'sub_category_id' => '',
+            'type_id' => '',
+            'description' => '',
+            'body' => '',
+            'feature' => '',
+            'sku' => '',
+            'purchase_price' => '',
+            'sell_price' => 'required|numeric',
+            'regular_price' => '',
+            'is_stock' => '',
+            'video_link' => ''
         ]);
-      
-      $data['user_id']=auth()->user()->id;
 
-    DB::beginTransaction();
+        $data['user_id'] = auth()->user()->id;
+
+        DB::beginTransaction();
 
         try {
+            if ($request->hasFile('image')) {
+                $data['image'] = $this->uploadService->upload($request->file('image'), 'products', 'product');
+            }
 
-        if($request->hasFile('image')) {
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('products'), $fileName);
-            $data['image']=$fileName;
+            $product = Product::create($data);
+
+            if (isset($request->images)) {
+                $imageData = [];
+                foreach ($request->images as $image) {
+                    $filename = $this->uploadService->upload($image, 'products', 'product');
+                    $imageData[] = ['image' => $filename];
+                }
+
+                if (!empty($imageData)) {
+                    $product->images()->createMany($imageData);
+                }
+            }
+
+            if ($request->type == 'variable') {
+
+                $variableData = [];
+
+                $variableData[] = [
+                    'size_id'=>"3",
+                    'color_id'=>"1",
+                    'weight_id'=>"1",
+                    'price'=>$request->sell_price,
+                ];
+
+                foreach ($request->size_id as $key => $size) {
+                   $variableData[]=[
+                        'size_id'=>$size,
+                        'color_id'=>$request->color_id[$key],
+                        'weight_id'=>$request->weight_id[$key],
+                        'price'=>$request->price[$key],
+                   ];
+                }
+
+                if (!empty($variableData)) {
+                    $product->variations()->createMany($variableData);
+                }
+
+            } else {
+                $variableData = [];
+
+                $variableData[] = [
+                    'size_id'=>"3",
+                    'color_id'=>"1",
+                    'weight_id'=>"1",
+                    'price'=>$request->sell_price,
+                ];
+                if (!empty($variableData)) {
+                    $product->variations()->createMany($variableData);
+                }
+            }
+
+            DB::commit();
+            return response()->json(['status'=>true ,'msg'=>'Product Is  Created !!','url'=>route('admin.products.index')]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['status'=>false ,'msg'=>$e->getMessage()]);
         }
 
-
-
-        $product=Product::create($data);
-
-        if(isset($request->images)) {
-
-            $image_data=[];
-            $fileName='';
-            foreach ($request->images as $key => $image) {
-                $originName = $image->getClientOriginalName();
-                $fileName = pathinfo($originName, PATHINFO_FILENAME);
-                $extension = $image->getClientOriginalExtension();
-                $fileName =$fileName.time().'.'.$extension;
-            
-                $image->move(public_path('products'), $fileName);
-                $image_data[]=['image'=>$fileName];
-            }
-
-            if (!empty($image_data)) {
-                $product->images()->createMany($image_data);
-            }
-            
-        } 
-        
-        if ($request->type == 'variable') {
-            
-            $variable_data=[];
-            
-            $variable_data[] = [
-                'size_id'=>"3",
-                'color_id'=>"1",
-                'weight_id'=>"1",
-                'price'=>$request->sell_price,    
-            ];
-            
-            foreach ($request->size_id as $key => $size) {
-               $variable_data[]=[
-                    'size_id'=>$size,
-                    'color_id'=>$request->color_id[$key],
-                    'weight_id'=>$request->weight_id[$key],
-                    'price'=>$request->price[$key],
-               ];
-            }
-
-            if (!empty($variable_data)) {
-                $product->variations()->createMany($variable_data);
-            }
-            
-        } else {
-            $variable_data=[];
-            
-            $variable_data[] = [
-                'size_id'=>"3",
-                'color_id'=>"1",
-                'weight_id'=>"1",
-                'price'=>$request->sell_price,    
-            ];
-            if (!empty($variable_data)) {
-                $product->variations()->createMany($variable_data);
-            }
-        }
-
-        // if (isset($request->size_id)) {
-
-        //     $variable_data=[];
-        //     foreach ($request->size_id as $key => $size) {
-        //       $variable_data[]=[
-        //             'size_id'=>$size,
-        //             'color_id'=>$request->color_id[$key],
-        //       ];
-        //     }
-
-        //     if (!empty($variable_data)) {
-        //         $product->variations()->createMany($variable_data);
-        //     }
-            
-        // }
-
-        DB::commit();
-        return response()->json(['status'=>true ,'msg'=>'Product Is  Created !!','url'=>route('admin.products.index')]);
-    } catch (\Exception $e) {
-        DB::rollback();
-        return response()->json(['status'=>false ,'msg'=>$e->getMessage()]);
-    }
-
-        
     }
 
     /**
@@ -240,11 +209,6 @@ class ProductController extends Controller
      */
     public function edit($id)
     {
-        if(!auth()->user()->can('product.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
         $item=Product::with('sizes')->find($id);
         $cats=Category::whereNull('parent_id')->get();
         $sizes=Size::all();
@@ -256,17 +220,17 @@ class ProductController extends Controller
 
         return view('backend.products.edit', compact('item','cats','sizes','types','subs','colors','weights'));
     }
-  
-  	public function productCopy($id){
-    	$item=Product::with('sizes')->find($id);
+
+    public function productCopy($id){
+        $item=Product::with('sizes')->find($id);
         $cats=Category::whereNull('parent_id')->get();
         $sizes=Size::all();
         $types=Type::all();
         $colors=Color::all();
 
         $subs=Category::where('parent_id', $item->category_id)->get();
-      	return view('backend.products.copy', compact('item','cats','sizes','types','subs','colors'));
-  	}
+        return view('backend.products.copy', compact('item','cats','sizes','types','subs','colors'));
+    }
 
     /**
      * Update the specified resource in storage.
@@ -276,12 +240,7 @@ class ProductController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
-    {        
-
-        if(!auth()->user()->can('product.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
+    {
 
         $product=Product::find($id);
         $data=$request->validate([
@@ -305,51 +264,37 @@ class ProductController extends Controller
         try {
 
         if($request->hasFile('image')) {
-            deleteImage('products', $product->image);
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('products'), $fileName);
-            $data['image']=$fileName;
+            $this->uploadService->delete($product->image, 'products');
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'products', 'product');
         }
 
-        
         if(isset($request->images)) {
-            $image_data=[];
-            $fileName='';
-            foreach ($request->images as $key => $image) {
-                $originName = $image->getClientOriginalName();
-                $fileName = pathinfo($originName, PATHINFO_FILENAME);
-                $extension = $image->getClientOriginalExtension();
-                $fileName =$fileName.time().'.'.$extension;
-            
-                $image->move(public_path('products'), $fileName);
-                $image_data[]=['image'=>$fileName];
+            $imageData = [];
+            foreach ($request->images as $image) {
+                $filename = $this->uploadService->upload($image, 'products', 'product');
+                $imageData[] = ['image' => $filename];
             }
 
-            if (!empty($image_data)) {
-                $product->images()->createMany($image_data);
+            if (!empty($imageData)) {
+                $product->images()->createMany($imageData);
             }
-            
+
         }
 
-    
         $product->update($data);
 
-        $delete_variations=Variation::where('product_id',$id)->whereNotIn('id',$request->variation_id)->get();
+        $deleteVariations=Variation::where('product_id',$id)->whereNotIn('id',$request->variation_id)->get();
 
-        if ($delete_variations->count()) {
-            foreach ($delete_variations as $key => $dvariation) {
+        if ($deleteVariations->count()) {
+            foreach ($deleteVariations as $key => $dvariation) {
                 $dvariation->delete();
             }
-        }           
+        }
 
 
         if (isset($request->size_id)) {
 
-            $variable_data=[];
+            $variableData = [];
             foreach ($request->size_id as $key => $size) {
 
                 if (isset($request->variation_id[$key])) {
@@ -360,7 +305,7 @@ class ProductController extends Controller
                     $variable->price=$request->price[$key];
                     $variable->save();
                 }else{
-                    $variable_data[]=[
+                    $variableData[]=[
                         'size_id'=>$size,
                         'color_id'=>$request->color_id[$key],
                         'weight_id'=>$request->weight_id[$key],
@@ -369,18 +314,18 @@ class ProductController extends Controller
                 }
             }
 
-            if (!empty($variable_data)) {
-                $product->variations()->createMany($variable_data);
-            }           
-            
+            if (!empty($variableData)) {
+                $product->variations()->createMany($variableData);
+            }
+
         }
-    
+
         DB::commit();
         return response()->json(['status'=>true ,'msg'=>'Product Is Updated !!','url'=>route('admin.products.index')]);
     } catch (\Exception $e) {
         DB::rollback();
         return response()->json(['status'=>false ,'msg'=>$e->getMessage()]);
-    }       
+    }
 
     }
 
@@ -392,22 +337,18 @@ class ProductController extends Controller
      */
     public function destroy($id)
     {
-        if(!auth()->user()->can('product.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-    DB::beginTransaction();
+        DB::beginTransaction();
 
         try {
 
         $product=Product::find($id);
-        deleteImage('products', $product->image);
-        deleteImage('products', $product->optional_image);
+        $this->uploadService->delete($product->image, 'products');
+        $this->uploadService->delete($product->optional_image, 'products');
 
         if ($product->images()->count()) {
-            
+
             foreach ($product->images as $key => $image) {
-                deleteImage('products', $image->image);
+                $this->uploadService->delete($image->image, 'products');
             }
             $product->images()->delete();
         }
@@ -422,14 +363,13 @@ class ProductController extends Controller
         DB::rollback();
         return response()->json(['status'=>false ,'msg'=>$e->getMessage()]);
     }
-        
 
     }
 
     public function deleteImage($id){
 
         $item=ProductImage::find($id);
-        deleteImage('products', $item->image);
+        $this->uploadService->delete($item->image, 'products');
         $item->delete();
         return back();
     }
@@ -437,29 +377,24 @@ class ProductController extends Controller
     public function fileUpload(Request $request){
 
         if($request->hasFile('upload')) {
-            $originName = $request->file('upload')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('upload')->getClientOriginalExtension();
-            $fileName = $fileName.'_'.time().'.'.$extension;
-        
-            $request->file('upload')->move(public_path('ck-images'), $fileName);
-   
+            $filename = $this->uploadService->upload($request->file('upload'), 'ck-images', 'default');
+
             $CKEditorFuncNum = $request->input('CKEditorFuncNum');
-            $url = asset('ck-images/'.$fileName); 
-            $msg = 'Image uploaded successfully'; 
+            $url = asset('ck-images/'.$filename);
+            $msg = 'Image uploaded successfully';
             $response = "<script>window.parent.CKEDITOR.tools.callFunction($CKEditorFuncNum, '$url', '$msg')</script>";
-               
-            @header('Content-type: text/html; charset=utf-8'); 
+
+            @header('Content-type: text/html; charset=utf-8');
             echo $response;
         }
 
     }
-    
+
     public function recommendedUpdate (){
-        
+
         $status=(request('is_recommended')==1)?1:null;
         DB::table('products')->whereIn('id', request('product_ids'))->update(['is_recommended'=>$status]);
         return response()->json(['status'=>true ,'msg'=>'Product Status Updated !!']);
     }
-    
+
 }

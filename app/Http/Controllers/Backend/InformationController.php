@@ -33,10 +33,10 @@ class InformationController extends Controller{
             'owner_phone'   => ['required'],    
             'owner_email'   => ['required'],    
             'address'       => ['required'],
-          	'copyright'     => ['required'],
-          	'facebook'      => '',
-          	'instagram'     => '',
-          	'youtube'       => '',
+            'copyright'     => ['required'],
+            'facebook'      => '',
+            'instagram'     => '',
+            'youtube'       => '',
             'tracking_code' => '',  
             'pixel' => '',  
             'search_console' => '',  
@@ -58,14 +58,6 @@ class InformationController extends Controller{
             'supp_num3' => '',
             'number_visibility' => '',
             'currency' => '',
-            'redx_api_base_url' => '',
-            'redx_api_access_token' => '',            
-          	'pathao_api_base_url' => '',
-            'pathao_api_access_token' => '',
-            'pathao_store_id' => '',
-            'steadfast_api_base_url' => '',
-            'steadfast_api_key' => '',
-            'steadfast_secret_key' => ''
         ]);
         
         $information = Information::findOrFail($id);

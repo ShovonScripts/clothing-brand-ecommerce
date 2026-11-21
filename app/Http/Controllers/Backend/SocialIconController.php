@@ -5,99 +5,88 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\SocialIcon;
-
+use App\Services\UploadService;
 
 class SocialIconController extends Controller
 {
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
+    {
+        $this->middleware('permission:social_icons.view')->only(['index']);
+        $this->middleware('permission:social_icons.create')->only(['create', 'store']);
+        $this->middleware('permission:social_icons.edit')->only(['edit', 'update']);
+        $this->middleware('permission:social_icons.delete')->only(['destroy']);
+        $this->uploadService = $uploadService;
+    }
+
     public function index()
     {
         $items = SocialIcon::all();
         return view('backend.social_icons.index', compact('items'));
     }
-    
-    
+
+
     public function create()
     {
         return view('backend.social_icons.create');
     }
-    
 
     public function store(Request $request)
     {
 
-        
-        $data=$request->validate([
-             'title'=> 'required',
-             'link'=> 'required',
+        $data = $request->validate([
+            'title' => 'required',
+            'link' => 'required',
+            'icon' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-        
-        
-        if($request->hasFile('icon')) {
-            $originName = $request->file('icon')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('icon')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('icon')->move(public_path('social_icons'), $fileName);
-            $data['image']=$fileName;
+
+        if ($request->hasFile('icon')) {
+            $data['image'] = $this->uploadService->upload($request->file('icon'), 'social_icons', 'default');
         }
-        
 
         SocialIcon::create($data);
-    
-        return response()->json(['status'=>true ,'msg'=>'SocialIcon  Is Created !!']);
-    }
-    
-    
-    
-    public function edit($id,Request $request)
-    {
 
-        $item=SocialIcon::find($id);
+        return response()->json(['status' => true, 'msg' => 'SocialIcon  Is Created !!']);
+    }
+
+
+    public function edit($id)
+    {
+        $item = SocialIcon::find($id);
         return view('backend.social_icons.edit', compact('item'));
-        
+
     }
-    
-    
-    public function update($id,Request $request)
+
+
+    public function update(Request $request, $id)
     {
 
-        $item=SocialIcon::find($id);
-        
-        $data=$request->validate([
-             'title'=> 'required',
-             'link'=> 'required',
+        $item = SocialIcon::find($id);
+
+        $data = $request->validate([
+            'title' => 'required',
+            'link' => 'required',
+            'icon' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-        
-        
-        if($request->hasFile('icon')) {
-            deleteImage('social_icons', $item->image);
-            $originName = $request->file('icon')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('icon')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('icon')->move(public_path('social_icons'), $fileName);
-            $data['image']=$fileName;
+
+        if ($request->hasFile('icon')) {
+            $this->uploadService->delete($item->image, 'social_icons');
+            $data['image'] = $this->uploadService->upload($request->file('icon'), 'social_icons', 'default');
         }
-        
 
         $item->update($data);
-    
-        return response()->json(['status'=>true ,'msg'=>'SocialIcon  Is Updated !!']);
+
+        return response()->json(['status' => true, 'msg' => 'SocialIcon  Is Updated !!']);
     }
-    
+
     public function destroy($id)
     {
-        if(!auth()->user()->can('product.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $product=SocialIcon::find($id);
-        deleteImage('social_icons', $product->image);
+        $product = SocialIcon::find($id);
+        $this->uploadService->delete($product->image, 'social_icons');
         $product->delete();
-        return response()->json(['status'=>true ,'msg'=>'SocialIcon Is Deleted !!']);
+        return response()->json(['status' => true, 'msg' => 'SocialIcon Is Deleted !!']);
 
     }
+
 }

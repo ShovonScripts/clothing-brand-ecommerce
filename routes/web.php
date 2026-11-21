@@ -116,8 +116,6 @@ Route::group(['as'=>'front.'], function() {
         Route::get('/coupon-discount',[CheckoutController::class,'getCouponDiscount'])->name('getCouponDiscount');
     });
         Route::resource('/checkouts',CheckoutController::class);  
-        Route::post('store-data',[CheckoutController::class,'storeData'])->name('storeData');
-        Route::post('/store/checkout',[CheckoutController::class,'StoreChk'])->name('store.checkout');
 
     Route::post('/store/landing/data',[CheckoutController::class,'storelandData'])->name('storelandData');
 

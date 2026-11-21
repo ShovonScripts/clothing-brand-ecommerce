@@ -5,16 +5,27 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\HomeSectionImage;
+use App\Services\UploadService;
 
 class HomeSectionImageController extends Controller
 {
-    public function index()
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
     {
-  
-        $items=HomeSectionImage::paginate(20);
-        return view('backend.home_section_images.index', compact('items'));
+        $this->middleware('permission:image.view')->only(['index']);
+        $this->middleware('permission:image.create')->only(['store']);
+        $this->middleware('permission:image.edit')->only(['edit', 'update']);
+        $this->middleware('permission:image.delete')->only(['destroy']);
+        $this->uploadService = $uploadService;
     }
 
+    public function index()
+    {
+
+        $items = HomeSectionImage::paginate(20);
+        return view('backend.home_section_images.index', compact('items'));
+    }
 
 
     /**
@@ -25,41 +36,25 @@ class HomeSectionImageController extends Controller
      */
     public function store(Request $request)
     {
-        if(!auth()->user()->can('image.create'))
-        {
-            abort(403, 'unauthorized');
+        $data = $request->validate([
+            'section' => 'required',
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'link' => '',
+            'is_for_small' => '',
+            'mobile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+        ]);
+
+        if ($request->hasFile('mobile_image')) {
+            $data['mobile_image'] = $this->uploadService->upload($request->file('mobile_image'), 'homeimages', 'banner');
         }
 
-        $data=$request->validate([
-             'section'=> 'required',
-             'image'=> 'required',
-             'link'=> '',
-             'is_for_small'=> '',
-        ]);
-        
-        if($request->hasFile('mobile_image')) {
-            $originName = $request->file('mobile_image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('mobile_image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('mobile_image')->move(public_path('homeimages'), $fileName);
-            $data['mobile_image']=$fileName;
-        }
-        
-        if($request->hasFile('image')) {
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('homeimages'), $fileName);
-            $data['image']=$fileName;
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'homeimages', 'banner');
         }
 
         HomeSectionImage::create($data);
 
-        return response()->json(['status'=>true ,'msg'=>'HomeSectionImage Is  Created !!','url'=>route('admin.home_section_images.index')]);
+        return response()->json(['status' => true, 'msg' => 'HomeSectionImage Is  Created !!', 'url' => route('admin.home_section_images.index')]);
     }
 
     /**
@@ -81,12 +76,7 @@ class HomeSectionImageController extends Controller
      */
     public function edit($id)
     {
-        if(!auth()->user()->can('image.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $item=HomeSectionImage::find($id);
+        $item = HomeSectionImage::find($id);
         return view('backend.home_section_images.edit', compact('item'));
     }
 
@@ -95,50 +85,34 @@ class HomeSectionImageController extends Controller
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http.Response
      */
     public function update(Request $request, $id)
     {
-        if(!auth()->user()->can('image.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $homeimage=HomeSectionImage::find($id);
-        $data=$request->validate([
-             'title'=> '',
-             'text'=> '',
-             'link'=> '',
-             'section'=> 'required'
+        $homeimage = HomeSectionImage::find($id);
+        $data = $request->validate([
+            'title' => '',
+            'text' => '',
+            'link' => '',
+            'section' => 'required',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'mobile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        if($request->hasFile('image')) {
-            deleteImage('homeimages', $homeimage->image);
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('homeimages'), $fileName);
-            $data['image']=$fileName;
+        if ($request->hasFile('image')) {
+            $this->uploadService->delete($homeimage->image, 'homeimages');
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'homeimages', 'banner');
         }
-        
-        
-        if($request->hasFile('mobile_image')) {
-            deleteImage('homeimages', $homeimage->mobile_image);
-            $originName = $request->file('mobile_image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('mobile_image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('mobile_image')->move(public_path('homeimages'), $fileName);
-            $data['mobile_image']=$fileName;
+
+
+        if ($request->hasFile('mobile_image')) {
+            $this->uploadService->delete($homeimage->mobile_image, 'homeimages');
+            $data['mobile_image'] = $this->uploadService->upload($request->file('mobile_image'), 'homeimages', 'banner');
         }
-        
-       
+
         $homeimage->update($data);
 
-        return response()->json(['status'=>true ,'msg'=>'HomeSectionImage Is Updated !!','url'=>route('admin.home_section_images.index')]);
+        return response()->json(['status' => true, 'msg' => 'HomeSectionImage Is Updated !!', 'url' => route('admin.home_section_images.index')]);
 
     }
 
@@ -150,16 +124,12 @@ class HomeSectionImageController extends Controller
      */
     public function destroy($id)
     {
-        if(!auth()->user()->can('image.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $item=HomeSectionImage::find($id);
-        deleteImage('homeimages', $item->image);
-        deleteImage('homeimages', $item->mobile_image);
+        $item = HomeSectionImage::find($id);
+        $this->uploadService->delete($item->image, 'homeimages');
+        $this->uploadService->delete($item->mobile_image, 'homeimages');
         $item->delete();
-        return response()->json(['status'=>true ,'msg'=>'HomeSectionImage Is Deleted !!']);
+        return response()->json(['status' => true, 'msg' => 'HomeSectionImage Is Deleted !!']);
 
     }
+
 }

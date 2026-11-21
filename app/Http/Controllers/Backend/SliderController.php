@@ -5,13 +5,24 @@ namespace App\Http\Controllers\Backend;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Slider;
-
+use App\Services\UploadService;
 
 class SliderController extends Controller
 {
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
+    {
+        $this->middleware('permission:slider.view')->only(['index']);
+        $this->middleware('permission:slider.create')->only(['create', 'store']);
+        $this->middleware('permission:slider.edit')->only(['edit', 'update']);
+        $this->middleware('permission:slider.delete')->only(['destroy']);
+        $this->uploadService = $uploadService;
+    }
+
     public function index()
     {
-        $items=Slider::get();
+        $items = Slider::get();
         return view('backend.sliders.index', compact('items'));
     }
 
@@ -22,11 +33,6 @@ class SliderController extends Controller
      */
     public function create()
     {
-        if(!auth()->user()->can('slider.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
         return view('backend.sliders.create');
     }
 
@@ -38,42 +44,25 @@ class SliderController extends Controller
      */
     public function store(Request $request)
     {
-        if(!auth()->user()->can('slider.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $data=$request->validate([
-             'title'=> 'required',
-             'description'=> '',
-             'link'=> '',
-             'image'=> 'required|image',
+        $data = $request->validate([
+            'title' => 'required',
+            'description' => '',
+            'link' => '',
+            'image' => 'required|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'mobile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-        
-        if($request->hasFile('mobile_image')) {
-            $originName = $request->file('mobile_image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('mobile_image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('mobile_image')->move(public_path('sliders'), $fileName);
-            $data['mobile_image']=$fileName;
+
+        if ($request->hasFile('mobile_image')) {
+            $data['mobile_image'] = $this->uploadService->upload($request->file('mobile_image'), 'sliders', 'slider');
         }
 
-
-        if($request->hasFile('image')) {
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('sliders'), $fileName);
-            $data['image']=$fileName;
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'sliders', 'slider');
         }
-    
+
         Slider::create($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Slider Is  Created !!','url'=>route('admin.sliders.index')]);
+        return response()->json(['status' => true, 'msg' => 'Slider Is  Created !!', 'url' => route('admin.sliders.index')]);
     }
 
     /**
@@ -95,14 +84,8 @@ class SliderController extends Controller
      */
     public function edit($id)
     {
-        if(!auth()->user()->can('slider.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
+        $item = Slider::find($id);
 
-        $item=Slider::find($id);
-
-        
         return view('backend.sliders.edit', compact('item'));
     }
 
@@ -115,44 +98,28 @@ class SliderController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if(!auth()->user()->can('slider.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $slider=Slider::find($id);
-        $data=$request->validate([
-             'title'=> 'required',
-             'description'=> '',
-             'link'=> '',
+        $slider = Slider::find($id);
+        $data = $request->validate([
+            'title' => 'required',
+            'description' => '',
+            'link' => '',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
+            'mobile_image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        if($request->hasFile('image')) {
-            deleteImage('sliders', $slider->image);
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('sliders'), $fileName);
-            $data['image']=$fileName;
-        }
-        
-        if($request->hasFile('mobile_image')) {
-            deleteImage('sliders', $slider->mobile_image);
-            $originName = $request->file('mobile_image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('mobile_image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('mobile_image')->move(public_path('sliders'), $fileName);
-            $data['mobile_image']=$fileName;
+        if ($request->hasFile('image')) {
+            $this->uploadService->delete($slider->image, 'sliders');
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'sliders', 'slider');
         }
 
-       
+        if ($request->hasFile('mobile_image')) {
+            $this->uploadService->delete($slider->mobile_image, 'sliders');
+            $data['mobile_image'] = $this->uploadService->upload($request->file('mobile_image'), 'sliders', 'slider');
+        }
+
         $slider->update($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Slider Is Updated !!','url'=>route('admin.sliders.index')]);
+        return response()->json(['status' => true, 'msg' => 'Slider Is Updated !!', 'url' => route('admin.sliders.index')]);
 
     }
 
@@ -164,16 +131,11 @@ class SliderController extends Controller
      */
     public function destroy($id)
     {
-        if(!auth()->user()->can('slider.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $slider=Slider::find($id);
-        deleteImage('sliders', $slider->image);
-        deleteImage('sliders', $slider->mobile_image);
+        $slider = Slider::find($id);
+        $this->uploadService->delete($slider->image, 'sliders');
+        $this->uploadService->delete($slider->mobile_image, 'sliders');
         $slider->delete();
-        return response()->json(['status'=>true ,'msg'=>'Slider Is Deleted !!']);
+        return response()->json(['status' => true, 'msg' => 'Slider Is Deleted !!']);
 
     }
 

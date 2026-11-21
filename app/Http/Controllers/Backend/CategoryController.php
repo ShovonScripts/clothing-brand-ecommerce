@@ -7,16 +7,28 @@ use Illuminate\Http\Request;
 use App\Models\Category;
 use App\Models\Type;
 use DB;
+use App\Services\UploadService;
+
 class CategoryController extends Controller
 {
-    public function index()
+    protected $uploadService;
+
+    public function __construct(UploadService $uploadService)
     {
-        $types=Type::all();
-        $items=Category::latest()->paginate(20);
-        $cats=Category::whereNull('parent_id')->select('name','id')->pluck('name','id')->toArray();
-        return view('backend.categories.index', compact('items','types','cats'));
+        $this->middleware('permission:category.view')->only(['index']);
+        $this->middleware('permission:category.create')->only(['store']);
+        $this->middleware('permission:category.edit')->only(['edit', 'update', 'popularCatgeory']);
+        $this->middleware('permission:category.delete')->only(['destroy']);
+        $this->uploadService = $uploadService;
     }
 
+    public function index()
+    {
+        $types = Type::all();
+        $items = Category::latest()->paginate(20);
+        $cats = Category::whereNull('parent_id')->select('name', 'id')->pluck('name', 'id')->toArray();
+        return view('backend.categories.index', compact('items', 'types', 'cats'));
+    }
 
 
     /**
@@ -27,31 +39,20 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        if(!auth()->user()->can('category.create'))
-        {
-            abort(403, 'unauthorized');
-        }
-        $data=$request->validate([
-             'name'=> 'required',
-          	 'url'=> 'required|unique:categories,url',
-             'parent_id'=> '',
+        $data = $request->validate([
+            'name' => 'required',
+            'url' => 'required|unique:categories,url',
+            'parent_id' => '',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
-      
-      
-        
-        if($request->hasFile('image')) {
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('categories'), $fileName);
-            $data['image']=$fileName;
+
+        if ($request->hasFile('image')) {
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'categories', 'category');
         }
 
         Category::create($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Category Is  Created !!','url'=>route('admin.categories.index')]);
+        return response()->json(['status' => true, 'msg' => 'Category Is  Created !!', 'url' => route('admin.categories.index')]);
     }
 
     /**
@@ -73,15 +74,10 @@ class CategoryController extends Controller
      */
     public function edit($id)
     {
-        if(!auth()->user()->can('category.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $item=Category::find($id);
-        $types=Type::all();
-        $cats=Category::whereNull('parent_id')->select('name','id')->pluck('name','id')->toArray();
-        return view('backend.categories.edit', compact('item','types','cats'));
+        $item = Category::find($id);
+        $types = Type::all();
+        $cats = Category::whereNull('parent_id')->select('name', 'id')->pluck('name', 'id')->toArray();
+        return view('backend.categories.edit', compact('item', 'types', 'cats'));
     }
 
     /**
@@ -93,32 +89,22 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if(!auth()->user()->can('category.edit'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $category=Category::find($id);
-        $data=$request->validate([
-             'name'=> 'required',
-          	 'url'=> 'required|unique:categories,url,'.$id,
-             'parent_id'=> '',
+        $category = Category::find($id);
+        $data = $request->validate([
+            'name' => 'required',
+            'url' => 'required|unique:categories,url,' . $id,
+            'parent_id' => '',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png,webp,gif|max:2048',
         ]);
 
-        if($request->hasFile('image')) {
-            deleteImage('categories', $category->image);
-            $originName = $request->file('image')->getClientOriginalName();
-            $fileName = pathinfo($originName, PATHINFO_FILENAME);
-            $extension = $request->file('image')->getClientOriginalExtension();
-            $fileName =$fileName.time().'.'.$extension;
-        
-            $request->file('image')->move(public_path('categories'), $fileName);
-            $data['image']=$fileName;
+        if ($request->hasFile('image')) {
+            $this->uploadService->delete($category->image, 'categories');
+            $data['image'] = $this->uploadService->upload($request->file('image'), 'categories', 'category');
         }
-       
+
         $category->update($data);
 
-        return response()->json(['status'=>true ,'msg'=>'Category Is Updated !!','url'=>route('admin.categories.index')]);
+        return response()->json(['status' => true, 'msg' => 'Category Is Updated !!', 'url' => route('admin.categories.index')]);
 
     }
 
@@ -130,23 +116,19 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        if(!auth()->user()->can('category.delete'))
-        {
-            abort(403, 'unauthorized');
-        }
-
-        $category=Category::find($id);
-        deleteImage('categories', $category->image);
+        $category = Category::find($id);
+        $this->uploadService->delete($category->image, 'categories');
         $category->delete();
-        return response()->json(['status'=>true ,'msg'=>'Category Is Deleted !!']);
+        return response()->json(['status' => true, 'msg' => 'Category Is Deleted !!']);
 
     }
-    
-    public function popularCatgeory(){
-        
-        $status=(request('is_popular')==1)?1:null;
-        DB::table('categories')->whereIn('id', request('cat_ids'))->update(['is_popular'=>$status]);
-        return response()->json(['status'=>true ,'msg'=>'Category Status Updated !!']);
+
+    public function popularCatgeory()
+    {
+
+        $status = (request('is_popular') == 1) ? 1 : null;
+        DB::table('categories')->whereIn('id', request('cat_ids'))->update(['is_popular' => $status]);
+        return response()->json(['status' => true, 'msg' => 'Category Status Updated !!']);
     }
 
 }

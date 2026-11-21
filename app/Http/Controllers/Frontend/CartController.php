@@ -55,28 +55,31 @@ class CartController extends Controller
         $data=getProductInfo($product);
         $cart = session()->get('cart', []);
         
-        // ORD-02: Always check stock from product, not client-sent is_stock
+        // ORD-01/02: Validate quantity against stock
         $isStock = (bool)$product->is_stock;
         if($isStock) {
-        	$stock=$this->util->checkProductStock($product_id, $variation_id);
-        if($stock < $quantity){
-            return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
-        }	
+            $stock=$this->util->checkProductStock($product_id, $variation_id);
+            if($stock < $quantity){
+                return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
+            }
+            // Cap quantity at available stock
+            $quantity = min($quantity, $stock);
         } 
         
         if(isset($cart[$variation_id])) {
           
-          	$new_stock=$cart[$variation_id]['quantity']+1;       
+            $newQty = $cart[$variation_id]['quantity'] + $quantity;
+            
+            if($isStock) {
+                $stock=$this->util->checkProductStock($product_id, $variation_id);
+                if($stock < $newQty){
+                    return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);              
+                }
+                $newQty = min($newQty, $stock);
+            }        
           
-            if($request->is_stock != 0) {          
-                  $stock=$this->util->checkProductStock($product_id, $variation_id);
-                  if($stock < $new_stock){
-                      return response()->json(['success'=>false,'msg'=>' stock Note Available!']);              
-                  }          
-              }        
-          
-          	$cart[$variation_id]['quantity']=$new_stock;
-          	$cart[$variation_id]['variation_id']=$variation_id;
+            $cart[$variation_id]['quantity']=$newQty;
+            $cart[$variation_id]['variation_id']=$variation_id;
         } else {
             
             $cart[$variation_id] = [
@@ -121,29 +124,38 @@ public function store(Request $request){
         $cart = session()->get('cart', []);
        
        
-        // ORD-02: Always check stock from product, not client-sent is_stock
+        // ORD-01/02: Validate quantity against stock
         $isStock = (bool)$product->is_stock;
         if($isStock) {
             $stock=$this->util->checkProductStock($product_id, $variation_id);
             if($stock < $quantity){
                 return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
-            }	
+            }
+            $quantity = min($quantity, $stock);
         } 
        
        
         if(isset($cart[$variation_id])) {
           
-          	$new_stock=$cart[$variation_id]['quantity']+1;       
-          
+            $newQty = $cart[$variation_id]['quantity'] + $quantity;
+            
             // if($request->is_stock != 0) {          
             //       $stock=$this->util->checkProductStock($product_id, $variation_id);
-            //       if($stock < $new_stock){
+            //       if($stock < $newQty){
             //           return response()->json(['success'=>false,'msg'=>' stock Note Available!']);              
             //       }          
             //   }        
-          
-          	$cart[$variation_id]['quantity']=$new_stock;
-          	$cart[$variation_id]['variation_id']=$variation_id;
+           
+            if($isStock) {
+                $stock=$this->util->checkProductStock($product_id, $variation_id);
+                if($stock < $newQty){
+                    return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);              
+                }
+                $newQty = min($newQty, $stock);
+            }
+           
+            $cart[$variation_id]['quantity']=$newQty;
+            $cart[$variation_id]['variation_id']=$variation_id;
         } else {
             
             $cart[$variation_id] = [
@@ -177,11 +189,11 @@ public function edit(Request $request,$id)
             ]);
             
             $qty=$request->quantity;
-           	
-           	$cart = session()->get('cart');
-           	$segm = request()->segment(1) ?: 'home';
-           
-           	if($qty==0){
+            	
+            	$cart = session()->get('cart');
+            	$segm = request()->segment(1) ?: 'home';
+            
+            if($qty==0){
              	if(isset($cart[$id])) {
                     unset($cart[$id]);
                 }
@@ -190,16 +202,22 @@ public function edit(Request $request,$id)
                     return response()->json(['success'=>false,'msg'=>' Cart item not found !']);
                 }
                	$product_id=$cart[$id]["product_id"];
-               	$is_stock=$cart[$id]["is_stock"];
-              	$stock=$this->util->checkProductStock($product_id, $id);
-              	if($is_stock == 1 && $stock <$qty){
-                   	return response()->json(['success'=>false,'msg'=>' Stock Note Available!']);
-              	}
+               	// ORD-02: Always check stock from product, not client-sent is_stock
+               	$isStock = (bool)($cart[$id]["is_stock"] ?? 0);
+               	$stock=$this->util->checkProductStock($product_id, $id);
+               	if($isStock && $stock < $qty){
+                    return response()->json(['success'=>false,'msg'=>' Stock Not Available!']);
+               	}
+               	
+               	// Cap at available stock
+               	if($isStock) {
+               	    $qty = min($qty, $stock);
+               	}
                	
                	$cart[$id]["quantity"] = $qty;
                
             }
-           
+            
             session()->put('cart', $cart);
             $view=view('frontend.partials.cart_sidebar',compact('cart','segm'))->render();
             $view2=view('frontend.cart.details')->render();
@@ -244,11 +262,11 @@ public function edit(Request $request,$id)
             return response()->json(['success'=>false,'msg'=>' Something Went Wrong !']);
         }
     }
-  
+   
   public function clearAll()
   {
-   	session()->put('cart', []);
-    return redirect()->route('front.home');
+    	session()->put('cart', []);
+     return redirect()->route('front.home');
   }
 
   public function create()
